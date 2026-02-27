@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -10,6 +10,7 @@ import Dialog from '@mui/material/Dialog';
 import Chip from '@mui/material/Chip';
 import Avatar from '@mui/material/Avatar';
 import Tooltip from '@mui/material/Tooltip';
+import InputAdornment from '@mui/material/InputAdornment';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
 import Replay5Icon from '@mui/icons-material/Replay5';
@@ -19,6 +20,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import MovieIcon from '@mui/icons-material/Movie';
 import FlagIcon from '@mui/icons-material/Flag';
 import DescriptionIcon from '@mui/icons-material/Description';
+import SearchIcon from '@mui/icons-material/Search';
 import { Clip, TranscriptGroup } from '../types';
 import { formatDuration } from '../utils';
 
@@ -44,7 +46,21 @@ const CapCutEditor: React.FC<CapCutEditorProps> = ({
   const [range, setRange] = useState<[number, number]>([0, Math.min(60, totalDuration)]);
   const [playhead, setPlayhead] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [search, setSearch] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const searchMatchCount = useMemo(() => {
+    if (!search.trim()) return 0;
+    const q = search.trim().toLowerCase();
+    return transcriptGroups.reduce((acc, g) => acc + g.lines.filter(l => l.text.toLowerCase().includes(q)).length, 0);
+  }, [search, transcriptGroups]);
+
+  useEffect(() => {
+    if (search.trim() && scrollRef.current) {
+      const el = scrollRef.current.querySelector('[data-search-match="true"]');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [search]);
 
   // Auto-scroll to range start on open
   useEffect(() => {
@@ -282,11 +298,53 @@ const CapCutEditor: React.FC<CapCutEditorProps> = ({
               }}
             >
               <Box sx={{ p: 1.5, borderBottom: '1px solid rgba(255,255,255,0.08)', bgcolor: 'rgba(255,255,255,0.03)' }}>
-                <Stack direction="row" spacing={1} alignItems="center">
+                <Stack direction="row" spacing={1.5} alignItems="center">
                   <DescriptionIcon sx={{ fontSize: 16, color: 'grey.500' }} />
-                  <Typography variant="subtitle2" sx={{ color: 'grey.400' }}>
+                  <Typography variant="subtitle2" sx={{ color: 'grey.400', flexShrink: 0 }}>
                     Transcripción del video
                   </Typography>
+                  <Box sx={{ flexGrow: 1 }} />
+                  <TextField
+                    size="small"
+                    placeholder="Buscar en transcripción..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <SearchIcon sx={{ fontSize: 16, color: 'grey.600' }} />
+                          </InputAdornment>
+                        ),
+                        endAdornment: search ? (
+                          <InputAdornment position="end">
+                            <Stack direction="row" spacing={0.5} alignItems="center">
+                              {searchMatchCount > 0 && (
+                                <Chip label={searchMatchCount} size="small" sx={{ height: 18, fontSize: '0.65rem', bgcolor: 'rgba(124,92,191,0.3)', color: '#b39ddb' }} />
+                              )}
+                              <IconButton size="small" onClick={() => setSearch('')} sx={{ color: 'grey.500', p: 0.25 }}>
+                                <CloseIcon sx={{ fontSize: 14 }} />
+                              </IconButton>
+                            </Stack>
+                          </InputAdornment>
+                        ) : null,
+                      },
+                    }}
+                    sx={{
+                      maxWidth: 240,
+                      '& .MuiOutlinedInput-root': {
+                        bgcolor: 'rgba(255,255,255,0.05)',
+                        color: 'white',
+                        borderRadius: 1.5,
+                        fontSize: '0.8rem',
+                        height: 32,
+                        '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
+                        '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+                        '&.Mui-focused fieldset': { borderColor: '#7c5cbf' },
+                      },
+                      '& .MuiInputBase-input::placeholder': { color: 'grey.600', fontSize: '0.8rem' },
+                    }}
+                  />
                 </Stack>
               </Box>
               <Box ref={scrollRef} sx={{ maxHeight: 400, overflowY: 'auto', p: 2 }}>
@@ -314,12 +372,31 @@ const CapCutEditor: React.FC<CapCutEditorProps> = ({
                           const isInRange = status !== null;
                           const isStart = status === 'start';
                           const isEnd = status === 'end';
+                          const q = search.trim().toLowerCase();
+                          const hasMatch = q && line.text.toLowerCase().includes(q);
+                          const dimmed = q && !hasMatch;
+
+                          const renderText = () => {
+                            if (!q || !hasMatch) return line.text;
+                            const idx = line.text.toLowerCase().indexOf(q);
+                            const before = line.text.slice(0, idx);
+                            const match = line.text.slice(idx, idx + q.length);
+                            const after = line.text.slice(idx + q.length);
+                            return (
+                              <>
+                                {before}
+                                <Box component="span" sx={{ bgcolor: 'rgba(255,213,79,0.3)', color: '#ffd54f', borderRadius: 0.5, px: 0.25 }}>{match}</Box>
+                                {after}
+                              </>
+                            );
+                          };
 
                           return (
                             <Box
                               key={li}
                               data-time={line.time}
                               data-in-range={isInRange ? 'true' : undefined}
+                              data-search-match={hasMatch ? 'true' : undefined}
                               sx={{
                                 display: 'flex',
                                 alignItems: 'flex-start',
@@ -335,6 +412,7 @@ const CapCutEditor: React.FC<CapCutEditorProps> = ({
                                   : isInRange
                                   ? 'rgba(76,175,80,0.3)'
                                   : 'transparent',
+                                opacity: dimmed ? 0.35 : 1,
                                 transition: 'all 0.15s',
                                 '&:hover': {
                                   bgcolor: isInRange ? 'rgba(76,175,80,0.15)' : 'rgba(255,255,255,0.04)',
@@ -349,7 +427,7 @@ const CapCutEditor: React.FC<CapCutEditorProps> = ({
                                 {line.time}
                               </Typography>
                               <Typography variant="body2" sx={{ flexGrow: 1, lineHeight: 1.6, color: isInRange ? 'grey.200' : 'grey.500' }}>
-                                {line.text}
+                                {renderText()}
                               </Typography>
                               <Stack direction="row" spacing={0.25} className="flag-buttons" sx={{ flexShrink: 0, opacity: 0, transition: 'opacity 0.15s' }}>
                                 <Tooltip title="Establecer como inicio">
