@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "mcp__claude_ai_Figma__get_metadata",
+      "mcp__claude_ai_Figma__get_screenshot",
+      "mcp__claude_ai_Figma__get_design_context",
+      "mcp__figma-remote-mcp__get_design_context",
+      "mcp__figma-remote-mcp__get_metadata",
+      "mcp__figma-remote-mcp__get_screenshot",
+      "Bash(curl:*)",
+      "mcp__figma-remote-mcp__generate_figma_design",
+      "Bash(open:*)",
+      "Bash(timeout 10 npm run:*)",
+      "Bash(npx vite:*)",
+      "Bash(git:*)"
+    ]
+  }
+}

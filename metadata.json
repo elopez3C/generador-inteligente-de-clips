@@ -1,0 +1,5 @@
+{
+  "name": "Remix: Generador Inteligente de Clips",
+  "description": "Una aplicación web impulsada por IA que convierte videos largos en clips cortos optimizados para redes sociales, con herramientas de edición de timestamps y análisis de score.",
+  "requestFramePermissions": []
+}
