@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -43,10 +43,16 @@ import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
+import TuneIcon from '@mui/icons-material/Tune';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import ConfirmDialog from '../components/ConfirmDialog';
 import MockVideoPlayer from '../components/MockVideoPlayer';
-import { Clip, LibraryFolder } from '../types';
+import ParamsDrawer from '../components/ParamsDrawer';
+import CapCutEditor from '../components/CapCutEditor';
+import ClipEditorDialog from '../components/ClipEditorDialog';
+import { Clip, AnalysisParams, LibraryFolder } from '../types';
 import { parseDuration } from '../utils';
+import { MOCK_TRANSCRIPT } from '../mockData';
 
 interface LibraryScreenProps {
   clips: Clip[];
@@ -60,6 +66,12 @@ interface LibraryScreenProps {
   onFoldersChange: (folders: LibraryFolder[]) => void;
   onRenameClip?: (id: string, newTitle: string) => void;
   onRenameProject?: (oldName: string, newName: string) => void;
+  initialSelectedProject?: string | null;
+  onProjectViewed?: () => void;
+  onReAnalyze?: (projectName: string, params: AnalysisParams) => void;
+  params?: AnalysisParams;
+  onAddManualClip?: (projectName: string, clip: Clip) => void;
+  onUpdateClip?: (clip: Clip) => void;
 }
 
 type DateFilter = 'all' | 'week' | 'month';
@@ -111,10 +123,12 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
   clips, activeVideoName, hasActiveSession,
   onResumeActiveSession, onNewAnalysis, onDeleteClip, onOpenInWorkspace,
   folders, onFoldersChange, onRenameClip, onRenameProject,
+  initialSelectedProject, onProjectViewed,
+  onReAnalyze, params: externalParams, onAddManualClip, onUpdateClip,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
-  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const [selectedProject, setSelectedProject] = useState<string | null>(initialSelectedProject ?? null);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ clipId: string; title: string } | null>(null);
   const [snackMessage, setSnackMessage] = useState('');
@@ -132,6 +146,18 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
   const [editClipValue, setEditClipValue] = useState('');
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editFolderValue, setEditFolderValue] = useState('');
+
+  // Per-clip editing / regeneration / manual clip
+  const [paramsDrawerOpen, setParamsDrawerOpen] = useState(false);
+  const [capCutEditorOpen, setCapCutEditorOpen] = useState(false);
+  const [clipEditorClip, setClipEditorClip] = useState<Clip | null>(null);
+
+  // Clear the one-shot signal on mount so parent resets
+  useEffect(() => {
+    if (initialSelectedProject) {
+      onProjectViewed?.();
+    }
+  }, []);
 
   const handleCreateFolder = () => {
     if (!newFolderName.trim()) return;
@@ -361,14 +387,24 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
               )}
             </Stack>
           </Box>
-          {onOpenInWorkspace && (
+          {onAddManualClip && (
             <Button
               variant="outlined"
-              startIcon={<EditIcon />}
-              onClick={() => onOpenInWorkspace(selectedProject)}
+              startIcon={<AddCircleOutlineIcon />}
+              onClick={() => setCapCutEditorOpen(true)}
               sx={{ display: { xs: 'none', sm: 'flex' } }}
             >
-              Editar clips
+              Clip manual
+            </Button>
+          )}
+          {onReAnalyze && externalParams && (
+            <Button
+              variant="outlined"
+              startIcon={<TuneIcon />}
+              onClick={() => setParamsDrawerOpen(true)}
+              sx={{ display: { xs: 'none', sm: 'flex' } }}
+            >
+              Regenerar clips
             </Button>
           )}
           <Button variant="contained" startIcon={<AddIcon />} onClick={onNewAnalysis} sx={{ display: { xs: 'none', sm: 'flex' } }}>
@@ -534,13 +570,24 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
                       >
                         Eliminar
                       </Button>
-                      <Button
-                        size="small"
-                        startIcon={<DownloadIcon />}
-                        onClick={() => downloadClipMetadata(clip)}
-                      >
-                        Descargar
-                      </Button>
+                      <Stack direction="row" spacing={0.5}>
+                        {onUpdateClip && (
+                          <Button
+                            size="small"
+                            startIcon={<EditIcon />}
+                            onClick={() => setClipEditorClip(clip)}
+                          >
+                            Editar
+                          </Button>
+                        )}
+                        <Button
+                          size="small"
+                          startIcon={<DownloadIcon />}
+                          onClick={() => downloadClipMetadata(clip)}
+                        >
+                          Descargar
+                        </Button>
+                      </Stack>
                     </Stack>
                   </CardContent>
                 </Card>
@@ -568,6 +615,49 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
           message={snackMessage}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         />
+
+        {/* ParamsDrawer for regeneration */}
+        {onReAnalyze && externalParams && (
+          <ParamsDrawer
+            open={paramsDrawerOpen}
+            onClose={() => setParamsDrawerOpen(false)}
+            onReAnalyze={(newParams) => {
+              onReAnalyze(selectedProject, newParams);
+              setParamsDrawerOpen(false);
+            }}
+            initialParams={externalParams}
+          />
+        )}
+
+        {/* CapCutEditor for manual clip creation */}
+        {onAddManualClip && (
+          <CapCutEditor
+            open={capCutEditorOpen}
+            onClose={() => setCapCutEditorOpen(false)}
+            onSave={(clip) => {
+              onAddManualClip(selectedProject, clip);
+              setCapCutEditorOpen(false);
+            }}
+            totalDuration={projectContext?.sourceDuration ? parseDuration(projectContext.sourceDuration) : 600}
+            nextNumber={projectClips.length + 1}
+            transcriptGroups={MOCK_TRANSCRIPT}
+          />
+        )}
+
+        {/* ClipEditorDialog for per-clip editing */}
+        {onUpdateClip && (
+          <ClipEditorDialog
+            open={clipEditorClip !== null}
+            clip={clipEditorClip}
+            totalDuration={projectContext?.sourceDuration ? parseDuration(projectContext.sourceDuration) : 600}
+            transcriptGroups={MOCK_TRANSCRIPT}
+            onClose={() => setClipEditorClip(null)}
+            onSave={(updatedClip) => {
+              onUpdateClip(updatedClip);
+              setClipEditorClip(null);
+            }}
+          />
+        )}
       </Box>
     );
   }

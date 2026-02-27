@@ -5,7 +5,7 @@ export enum Screen {
 
 export type WorkspaceMode = 'transcription' | 'video';
 
-export type WorkspacePhase = 'analyzing' | 'ready' | 'reanalyzing' | 'generating' | 'done';
+export type WorkspacePhase = 'analyzing' | 'ready' | 'reanalyzing';
 
 export interface Clip {
   id: string;
@@ -41,6 +41,7 @@ export interface AnalysisParams {
   style: ClipStyle;
   socialFocus: SocialFocus;
   keywords: string;
+  avgDuration: number | null;
 }
 
 export interface LibraryFolder {

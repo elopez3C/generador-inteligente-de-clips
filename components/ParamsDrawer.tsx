@@ -7,7 +7,7 @@ import IconButton from '@mui/material/IconButton';
 import TextField from '@mui/material/TextField';
 import Slider from '@mui/material/Slider';
 import Chip from '@mui/material/Chip';
-
+import Switch from '@mui/material/Switch';
 import Drawer from '@mui/material/Drawer';
 import Divider from '@mui/material/Divider';
 import Alert from '@mui/material/Alert';
@@ -25,6 +25,7 @@ const DEFAULT_PARAMS: AnalysisParams = {
   style: 'Informativo',
   socialFocus: 'TikTok',
   keywords: '',
+  avgDuration: null,
 };
 
 const STYLES: ClipStyle[] = ['Educativo', 'Entretenimiento', 'Informativo', 'Inspiracional', 'Ventas'];
@@ -133,6 +134,41 @@ const ParamsDrawer: React.FC<ParamsDrawerProps> = ({ open, onClose, onReAnalyze,
                 <Typography variant="caption" color="text.disabled">Flexible (6.0)</Typography>
                 <Typography variant="caption" color="text.disabled">Estricto (9.0)</Typography>
               </Stack>
+            </Box>
+
+            <Divider />
+
+            {/* Average Duration */}
+            <Box>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+                <Typography variant="overline">Duración Promedio de Clips</Typography>
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Typography variant="caption" color="text.secondary">IA decide</Typography>
+                  <Switch
+                    size="small"
+                    checked={params.avgDuration === null}
+                    onChange={(_, checked) =>
+                      setParams(p => ({ ...p, avgDuration: checked ? null : 45 }))
+                    }
+                  />
+                </Stack>
+              </Stack>
+              {params.avgDuration !== null && (
+                <>
+                  <Slider
+                    min={15} max={120} step={5}
+                    value={params.avgDuration}
+                    valueLabelDisplay="auto"
+                    valueLabelFormat={v => `${v}s`}
+                    onChange={(_, v) => setParams(p => ({ ...p, avgDuration: v as number }))}
+                  />
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="caption" color="text.disabled">15s</Typography>
+                    <Chip size="small" label={`${params.avgDuration}s`} color="primary" />
+                    <Typography variant="caption" color="text.disabled">120s</Typography>
+                  </Stack>
+                </>
+              )}
             </Box>
 
             <Divider />

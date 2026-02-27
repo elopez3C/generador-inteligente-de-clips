@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
-import Stack from '@mui/material/Stack';
 import Checkbox from '@mui/material/Checkbox';
 import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
@@ -14,6 +14,7 @@ import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import Avatar from '@mui/material/Avatar';
 import DeleteIcon from '@mui/icons-material/Delete';
+import DownloadIcon from '@mui/icons-material/Download';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -29,13 +30,14 @@ interface ClipCardProps {
   onUpdateTimestamp?: (id: string, type: 'start' | 'end', delta: number) => void;
   onSetTimestamp?: (id: string, type: 'start' | 'end', minutes: number, seconds: number) => void;
   onDelete?: (id: string) => void;
+  onDownload?: (clip: Clip) => void;
   onExpand?: (clip: Clip) => void;
 }
 
 const fmt = (m: number, s: number) => `${m}:${s.toString().padStart(2, '0')}`;
 
 const ClipCard: React.FC<ClipCardProps> = ({
-  clip, mode, onToggleSelection, onUpdateTimestamp, onSetTimestamp, onDelete, onExpand,
+  clip, mode, onToggleSelection, onUpdateTimestamp, onSetTimestamp, onDelete, onDownload, onExpand,
 }) => {
   const [editingTimestamp, setEditingTimestamp] = useState<'start' | 'end' | null>(null);
   const [editMinutes, setEditMinutes] = useState(0);
@@ -92,15 +94,26 @@ const ClipCard: React.FC<ClipCardProps> = ({
                 {clip.sourceVideoName ?? '—'}
               </Typography>
             </Box>
-            {onDelete && (
-              <IconButton
-                size="small" color="default"
-                onClick={e => { e.stopPropagation(); onDelete(clip.id); }}
-                sx={{ ml: 'auto', flexShrink: 0, opacity: 0.4, '&:hover': { opacity: 1, color: 'error.main' } }}
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            )}
+            <Stack direction="row" spacing={0.5} sx={{ ml: 'auto', flexShrink: 0 }}>
+              {onDownload && (
+                <IconButton
+                  size="small" color="default"
+                  onClick={e => { e.stopPropagation(); onDownload(clip); }}
+                  sx={{ opacity: 0.4, '&:hover': { opacity: 1, color: 'primary.main' } }}
+                >
+                  <DownloadIcon fontSize="small" />
+                </IconButton>
+              )}
+              {onDelete && (
+                <IconButton
+                  size="small" color="default"
+                  onClick={e => { e.stopPropagation(); onDelete(clip.id); }}
+                  sx={{ opacity: 0.4, '&:hover': { opacity: 1, color: 'error.main' } }}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              )}
+            </Stack>
           </Stack>
           <Typography variant="body2" color="text.secondary" fontStyle="italic"
             sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', mb: 1.5 }}

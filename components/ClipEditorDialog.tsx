@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -10,25 +10,25 @@ import Dialog from '@mui/material/Dialog';
 import Chip from '@mui/material/Chip';
 import Avatar from '@mui/material/Avatar';
 import Tooltip from '@mui/material/Tooltip';
+import CloseIcon from '@mui/icons-material/Close';
+import CheckIcon from '@mui/icons-material/Check';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
 import Replay5Icon from '@mui/icons-material/Replay5';
 import Forward5Icon from '@mui/icons-material/Forward5';
-import CloseIcon from '@mui/icons-material/Close';
-import CheckIcon from '@mui/icons-material/Check';
 import MovieIcon from '@mui/icons-material/Movie';
 import FlagIcon from '@mui/icons-material/Flag';
 import DescriptionIcon from '@mui/icons-material/Description';
 import { Clip, TranscriptGroup } from '../types';
-import { formatDuration } from '../utils';
+import { formatDuration, parseDuration } from '../utils';
 
-interface CapCutEditorProps {
+interface ClipEditorDialogProps {
   open: boolean;
-  onClose: () => void;
-  onSave: (clip: Clip) => void;
+  clip: Clip | null;
   totalDuration: number;
-  nextNumber: number;
   transcriptGroups: TranscriptGroup[];
+  onClose: () => void;
+  onSave: (updatedClip: Clip) => void;
 }
 
 function timeToSeconds(timeStr: string): number {
@@ -37,19 +37,32 @@ function timeToSeconds(timeStr: string): number {
   return (parts[0] || 0) * 60 + (parts[1] || 0);
 }
 
-const CapCutEditor: React.FC<CapCutEditorProps> = ({
-  open, onClose, onSave, totalDuration, nextNumber, transcriptGroups,
+const ClipEditorDialog: React.FC<ClipEditorDialogProps> = ({
+  open, clip, totalDuration, transcriptGroups, onClose, onSave,
 }) => {
   const [title, setTitle] = useState('');
-  const [range, setRange] = useState<[number, number]>([0, Math.min(60, totalDuration)]);
+  const [range, setRange] = useState<[number, number]>([0, 60]);
   const [playhead, setPlayhead] = useState(0);
   const [playing, setPlaying] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to range start on open
   useEffect(() => {
-    if (open && scrollRef.current) {
+    if (clip) {
+      setTitle(clip.title);
+      const start = clip.startMinutes * 60 + clip.startSeconds;
+      const end = clip.endMinutes * 60 + clip.endSeconds;
+      setRange([start, end]);
+      setPlayhead(start);
+      setPlaying(false);
+    }
+  }, [clip]);
+
+  // Auto-scroll to clip start on open
+  useEffect(() => {
+    if (open && clip && scrollRef.current) {
       const timer = setTimeout(() => {
+        const startSec = clip.startMinutes * 60 + clip.startSeconds;
+        // Find the first line in range
         const el = scrollRef.current?.querySelector('[data-in-range="true"]');
         if (el) {
           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -57,7 +70,9 @@ const CapCutEditor: React.FC<CapCutEditorProps> = ({
       }, 200);
       return () => clearTimeout(timer);
     }
-  }, [open]);
+  }, [open, clip]);
+
+  if (!clip) return null;
 
   const clipDuration = range[1] - range[0];
   const isValid = clipDuration > 0;
@@ -74,25 +89,15 @@ const CapCutEditor: React.FC<CapCutEditorProps> = ({
     const endM = Math.floor(range[1] / 60);
     const endS = Math.round(range[1] % 60);
 
-    const clip: Clip = {
-      id: `manual-${Date.now()}`,
-      number: nextNumber,
-      title: title.trim() || `Clip Manual #${nextNumber}`,
-      score: 0,
-      hook: 'Clip definido manualmente.',
-      category: 'Manual',
+    onSave({
+      ...clip,
+      title: title.trim() || clip.title,
       startMinutes: startM,
       startSeconds: startS,
       endMinutes: endM,
       endSeconds: endS,
-      justification: 'Creado manualmente desde el editor de video.',
-      selected: true,
-      isManual: true,
-    };
-    onSave(clip);
+    });
     onClose();
-    setTitle('');
-    setRange([0, Math.min(60, totalDuration)]);
   };
 
   const setStartFromLine = (timeSec: number) => {
@@ -108,6 +113,7 @@ const CapCutEditor: React.FC<CapCutEditorProps> = ({
   };
 
   const getLineStatus = (timeSec: number): 'start' | 'end' | 'in' | null => {
+    // Use a small tolerance for matching start/end
     if (Math.abs(timeSec - range[0]) <= 1) return 'start';
     if (Math.abs(timeSec - range[1]) <= 1) return 'end';
     if (timeSec > range[0] && timeSec < range[1]) return 'in';
@@ -136,7 +142,6 @@ const CapCutEditor: React.FC<CapCutEditorProps> = ({
           </IconButton>
           <TextField
             size="small"
-            placeholder={`Clip Manual #${nextNumber}`}
             value={title}
             onChange={e => setTitle(e.target.value)}
             sx={{
@@ -161,7 +166,7 @@ const CapCutEditor: React.FC<CapCutEditorProps> = ({
             disabled={!isValid}
             sx={{ borderRadius: 2 }}
           >
-            Guardar clip
+            Guardar cambios
           </Button>
         </Stack>
 
@@ -188,7 +193,7 @@ const CapCutEditor: React.FC<CapCutEditorProps> = ({
             >
               <MovieIcon sx={{ fontSize: 48, color: 'grey.700', mb: 1 }} />
               <Typography variant="caption" sx={{ color: 'grey.600' }}>
-                Vista previa no disponible
+                Vista previa del clip
               </Typography>
               <Box
                 sx={{
@@ -206,7 +211,7 @@ const CapCutEditor: React.FC<CapCutEditorProps> = ({
                   variant="body2"
                   sx={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: 'grey.300' }}
                 >
-                  {formatDuration(playhead)} / {formatDuration(totalDuration)}
+                  {formatDuration(range[0])} — {formatDuration(range[1])}
                 </Typography>
               </Box>
             </Box>
@@ -394,4 +399,4 @@ const CapCutEditor: React.FC<CapCutEditorProps> = ({
   );
 };
 
-export default CapCutEditor;
+export default ClipEditorDialog;

@@ -15,10 +15,12 @@ import ConfirmDialog from './components/ConfirmDialog';
 import UploadDialog from './components/UploadDialog';
 import { Screen, WorkspacePhase, Clip, AnalysisParams, FileData, LibraryFolder } from './types';
 import { MOCK_ANALYSIS_CLIPS, MOCK_LIBRARY_CLIPS } from './mockData';
+import { parseDuration } from './utils';
 
 const DEFAULT_PARAMS: AnalysisParams = {
   minScore: 7.5, durationMin: 30, durationMax: 60,
   maxClips: '5-7', numClips: 5, style: 'Informativo', socialFocus: 'TikTok', keywords: '',
+  avgDuration: null,
 };
 
 const App: React.FC = () => {
@@ -30,6 +32,7 @@ const App: React.FC = () => {
   const [generatedClips, setGeneratedClips] = useState<Clip[]>(MOCK_LIBRARY_CLIPS);
   const [folders, setFolders] = useState<LibraryFolder[]>([]);
   const [isSaved, setIsSaved] = useState(false);
+  const [initialProject, setInitialProject] = useState<string | null>(null);
 
   // Upload dialog state
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -40,7 +43,7 @@ const App: React.FC = () => {
   const [leaveIntentIsUpload, setLeaveIntentIsUpload] = useState(false);
 
   const hasActiveSession = clips.length > 0;
-  const hasUnsavedWork = hasActiveSession && !isSaved && phase !== 'done';
+  const hasUnsavedWork = hasActiveSession && !isSaved;
 
   // ── Navigation ──────────────────────────────────────────────────────────────
 
@@ -92,8 +95,27 @@ const App: React.FC = () => {
     setIsSaved(false);
 
     setTimeout(() => {
-      setClips(MOCK_ANALYSIS_CLIPS.map(c => ({ ...c, sourceVideoName: file.name })));
+      const analysisClips = MOCK_ANALYSIS_CLIPS.map(c => ({ ...c, sourceVideoName: file.name }));
+      setClips(analysisClips);
       setPhase('ready');
+
+      // Auto-save all clips to library and navigate to project detail
+      const newClips = analysisClips.map(c => ({
+        ...c,
+        isNew: true,
+        selected: false,
+        processedAt: Date.now(),
+        platform: newParams.socialFocus,
+        style: newParams.style,
+        sourceDuration: file.duration,
+      }));
+      setGeneratedClips(prev => [
+        ...prev.map(c => ({ ...c, isNew: false })),
+        ...newClips,
+      ]);
+      setIsSaved(true);
+      setInitialProject(file.name);
+      setScreen(Screen.LIBRARY);
     }, 3200);
   };
 
@@ -114,6 +136,8 @@ const App: React.FC = () => {
       ...newClips,
     ]);
     setIsSaved(true);
+    setInitialProject(selectedFile?.name ?? null);
+    setScreen(Screen.LIBRARY);
   };
 
   const handleDeleteWorkspaceClip = (id: string) => {
@@ -128,28 +152,6 @@ const App: React.FC = () => {
       setClips(prev => prev.map(c => ({ ...c, selected: false })));
       setPhase('ready');
     }, 2600);
-  };
-
-  const handleGenerate = () => {
-    setPhase('generating');
-  };
-
-  const handleGenerationComplete = () => {
-    const selected = clips.filter(c => c.selected);
-    const newClips = selected.map(c => ({
-      ...c,
-      isNew: true,
-      selected: false,
-      processedAt: Date.now(),
-      platform: params.socialFocus,
-      style: params.style,
-      sourceDuration: selectedFile?.duration,
-    }));
-    setGeneratedClips(prev => [
-      ...prev.map(c => ({ ...c, isNew: false })),
-      ...newClips,
-    ]);
-    setPhase('done');
   };
 
   const handleNewVideo = () => handleOpenUpload();
@@ -171,6 +173,50 @@ const App: React.FC = () => {
     setClips(projectClips.map(c => ({ ...c, selected: false })));
     setPhase('ready');
     setScreen(Screen.WORKSPACE);
+  };
+
+  const handleReAnalyzeProject = (projectName: string, newParams: AnalysisParams) => {
+    setParams(newParams);
+    // Mock re-analysis: replace project clips with new mock data after a delay
+    const ref = generatedClips.find(c => c.sourceVideoName === projectName);
+    const sourceDuration = ref?.sourceDuration;
+    setTimeout(() => {
+      const newClips = MOCK_ANALYSIS_CLIPS.map(c => ({
+        ...c,
+        id: `reanalysis-${Date.now()}-${c.id}`,
+        sourceVideoName: projectName,
+        isNew: true,
+        selected: false,
+        processedAt: Date.now(),
+        platform: newParams.socialFocus,
+        style: newParams.style,
+        sourceDuration,
+      }));
+      setGeneratedClips(prev => [
+        ...prev.filter(c => c.sourceVideoName !== projectName).map(c => ({ ...c, isNew: false })),
+        ...newClips,
+      ]);
+    }, 2000);
+  };
+
+  const handleAddManualClip = (projectName: string, clip: Clip) => {
+    const ref = generatedClips.find(c => c.sourceVideoName === projectName);
+    setGeneratedClips(prev => [
+      ...prev.map(c => ({ ...c, isNew: false })),
+      {
+        ...clip,
+        sourceVideoName: projectName,
+        isNew: true,
+        processedAt: Date.now(),
+        platform: ref?.platform,
+        style: ref?.style,
+        sourceDuration: ref?.sourceDuration,
+      },
+    ]);
+  };
+
+  const handleUpdateClip = (updatedClip: Clip) => {
+    setGeneratedClips(prev => prev.map(c => c.id === updatedClip.id ? updatedClip : c));
   };
 
   return (
@@ -232,8 +278,6 @@ const App: React.FC = () => {
             onClipsChange={(newClips) => { setClips(newClips); setIsSaved(false); }}
             onParamsChange={setParams}
             onReAnalyze={handleReAnalyze}
-            onGenerate={handleGenerate}
-            onGenerationComplete={handleGenerationComplete}
             onSave={handleSave}
             onDeleteClip={handleDeleteWorkspaceClip}
             onGoToLibrary={handleGoToLibrary}
@@ -252,6 +296,8 @@ const App: React.FC = () => {
             onOpenInWorkspace={handleOpenProjectInWorkspace}
             folders={folders}
             onFoldersChange={setFolders}
+            initialSelectedProject={initialProject}
+            onProjectViewed={() => setInitialProject(null)}
             onRenameClip={(id, newTitle) => {
               setGeneratedClips(prev => prev.map(c => c.id === id ? { ...c, title: newTitle } : c));
             }}
@@ -264,6 +310,10 @@ const App: React.FC = () => {
                 projectNames: f.projectNames.map(p => p === oldName ? newName : p),
               })));
             }}
+            params={params}
+            onReAnalyze={handleReAnalyzeProject}
+            onAddManualClip={handleAddManualClip}
+            onUpdateClip={handleUpdateClip}
           />
         )}
       </Box>

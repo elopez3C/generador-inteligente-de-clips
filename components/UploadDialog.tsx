@@ -17,6 +17,7 @@ import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import Switch from '@mui/material/Switch';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import VideoFileIcon from '@mui/icons-material/VideoFile';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -184,6 +185,35 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ open, initialParams, onClos
                     />
                     <Chip size="small" label={localParams.numClips} color="primary" sx={{ minWidth: 36 }} />
                   </Stack>
+                </Box>
+
+                <Box>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
+                    <Typography variant="overline">Duración Promedio de Clips</Typography>
+                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                      <Typography variant="caption" color="text.secondary">IA decide</Typography>
+                      <Switch
+                        size="small"
+                        checked={localParams.avgDuration === null}
+                        onChange={(_, checked) =>
+                          setLocalParams(p => ({ ...p, avgDuration: checked ? null : 45 }))
+                        }
+                      />
+                    </Stack>
+                  </Stack>
+                  {localParams.avgDuration !== null && (
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Slider
+                        min={15} max={120} step={5}
+                        value={localParams.avgDuration}
+                        valueLabelDisplay="auto"
+                        valueLabelFormat={v => `${v}s`}
+                        onChange={(_, v) => setLocalParams(p => ({ ...p, avgDuration: v as number }))}
+                        sx={{ flexGrow: 1 }}
+                      />
+                      <Chip size="small" label={`${localParams.avgDuration}s`} color="primary" sx={{ minWidth: 48 }} />
+                    </Stack>
+                  )}
                 </Box>
 
                 <Box>

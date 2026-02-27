@@ -19,7 +19,6 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import TuneIcon from '@mui/icons-material/Tune';
 import AddIcon from '@mui/icons-material/Add';
-import CheckIcon from '@mui/icons-material/Check';
 import SaveIcon from '@mui/icons-material/Save';
 import DescriptionIcon from '@mui/icons-material/Description';
 import OndemandVideoIcon from '@mui/icons-material/OndemandVideo';
@@ -29,7 +28,6 @@ import ManualClipDialog from '../components/ManualClipDialog';
 import CapCutEditor from '../components/CapCutEditor';
 import TranscriptClipCreator from '../components/TranscriptClipCreator';
 import ParamsDrawer from '../components/ParamsDrawer';
-import GenerationDialog from '../components/GenerationDialog';
 import { MOCK_TRANSCRIPT } from '../mockData';
 import { Clip, AnalysisParams, WorkspacePhase, WorkspaceMode } from '../types';
 import { parseDuration } from '../utils';
@@ -44,8 +42,6 @@ interface WorkspaceScreenProps {
   onClipsChange: (clips: Clip[]) => void;
   onParamsChange: (p: AnalysisParams) => void;
   onReAnalyze: (p: AnalysisParams) => void;
-  onGenerate: () => void;
-  onGenerationComplete: () => void;
   onSave: () => void;
   onDeleteClip: (id: string) => void;
   onGoToLibrary: () => void;
@@ -177,7 +173,7 @@ function ClipsSkeleton() {
 const WorkspaceScreen: React.FC<WorkspaceScreenProps> = ({
   phase, clips, params, videoName, videoDuration, isSaved,
   onClipsChange, onParamsChange, onReAnalyze,
-  onGenerate, onGenerationComplete, onSave, onDeleteClip, onGoToLibrary, onNewVideo,
+  onSave, onDeleteClip, onGoToLibrary, onNewVideo,
 }) => {
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>('video');
   const [paramsOpen, setParamsOpen] = useState(false);
@@ -312,43 +308,19 @@ const WorkspaceScreen: React.FC<WorkspaceScreenProps> = ({
           >
             Clip manual
           </Button>
-          {phase === 'done' ? (
-            <Button
-              variant="contained" size="small" color="success"
-              startIcon={<CheckIcon />}
-              onClick={onGoToLibrary}
-            >
-              Ver en Biblioteca
-            </Button>
-          ) : (
-            <>
-              <Button
-                variant="outlined" size="small"
-                startIcon={<SaveIcon />}
-                disabled={selectedCount === 0 || phase === 'reanalyzing' || isSaved}
-                onClick={onSave}
-                color={isSaved ? 'success' : 'primary'}
-              >
-                {isSaved ? 'Guardado' : 'Guardar'}
-              </Button>
-              <Button
-                variant="contained" size="small"
-                disabled={selectedCount === 0 || phase === 'reanalyzing'}
-                onClick={onGenerate}
-              >
-                Generar {selectedCount > 0 ? selectedCount : ''} clips
-              </Button>
-            </>
-          )}
+          <Button
+            variant="outlined" size="small"
+            startIcon={<SaveIcon />}
+            disabled={selectedCount === 0 || phase === 'reanalyzing' || isSaved}
+            onClick={onSave}
+            color={isSaved ? 'success' : 'primary'}
+          >
+            {isSaved ? 'Guardado' : 'Guardar'}
+          </Button>
         </Stack>
       </Paper>
 
       {/* Dialogs & Drawers */}
-      <GenerationDialog
-        open={phase === 'generating'}
-        clips={selectedClips}
-        onComplete={onGenerationComplete}
-      />
       <ParamsDrawer
         open={paramsOpen}
         onClose={() => setParamsOpen(false)}
@@ -368,6 +340,7 @@ const WorkspaceScreen: React.FC<WorkspaceScreenProps> = ({
         onSave={handleAddManual}
         totalDuration={videoDurationSeconds}
         nextNumber={clips.length + 1}
+        transcriptGroups={MOCK_TRANSCRIPT}
       />
       <TranscriptClipCreator
         open={transcriptCreatorOpen}
