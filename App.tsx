@@ -18,9 +18,8 @@ import { MOCK_ANALYSIS_CLIPS, MOCK_LIBRARY_CLIPS } from './mockData';
 import { parseDuration } from './utils';
 
 const DEFAULT_PARAMS: AnalysisParams = {
-  minScore: 7.5, durationMin: 30, durationMax: 60,
+  minScore: 7.5, durationMin: 15, durationMax: 45,
   maxClips: '5-7', numClips: 5, style: 'Informativo', socialFocus: 'TikTok', keywords: '',
-  avgDuration: null,
 };
 
 const App: React.FC = () => {
@@ -232,7 +231,7 @@ const App: React.FC = () => {
           </IconButton>
           <Typography variant="h6" fontWeight={700} sx={{ mr: 3, cursor: 'pointer' }}
             onClick={() => navigateTo(Screen.LIBRARY)}>
-            AI Clip Master
+            AI Clip Master V1
           </Typography>
 
           {/* Active session pill — visible from any screen */}

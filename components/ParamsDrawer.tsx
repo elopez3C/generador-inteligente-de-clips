@@ -7,25 +7,23 @@ import IconButton from '@mui/material/IconButton';
 import TextField from '@mui/material/TextField';
 import Slider from '@mui/material/Slider';
 import Chip from '@mui/material/Chip';
-import Switch from '@mui/material/Switch';
 import Drawer from '@mui/material/Drawer';
 import Divider from '@mui/material/Divider';
 import Alert from '@mui/material/Alert';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import CloseIcon from '@mui/icons-material/Close';
-import { AnalysisParams, ClipStyle, SocialFocus } from '../types';
+import { AnalysisParams, ClipStyle, SocialFocus, PLATFORM_PRESETS } from '../types';
 
 const DEFAULT_PARAMS: AnalysisParams = {
   minScore: 7.5,
-  durationMin: 30,
-  durationMax: 60,
+  durationMin: 15,
+  durationMax: 45,
   maxClips: '5-7',
   numClips: 5,
   style: 'Informativo',
   socialFocus: 'TikTok',
   keywords: '',
-  avgDuration: null,
 };
 
 const STYLES: ClipStyle[] = ['Educativo', 'Entretenimiento', 'Informativo', 'Inspiracional', 'Ventas'];
@@ -79,7 +77,11 @@ const ParamsDrawer: React.FC<ParamsDrawerProps> = ({ open, onClose, onReAnalyze,
             <Box>
               <Typography variant="overline" display="block" sx={{ mb: 1 }}>Plataforma Objetivo</Typography>
               <ToggleButtonGroup exclusive value={params.socialFocus}
-                onChange={(_, v) => v && setParams(p => ({ ...p, socialFocus: v }))}>
+                onChange={(_, v) => {
+                  if (!v) return;
+                  const preset = PLATFORM_PRESETS[v as SocialFocus];
+                  setParams(p => ({ ...p, socialFocus: v, durationMin: preset.durationMin, durationMax: preset.durationMax }));
+                }}>
                 {PLATFORMS.map(pl => <ToggleButton key={pl} value={pl}>{pl}</ToggleButton>)}
               </ToggleButtonGroup>
             </Box>
@@ -138,58 +140,31 @@ const ParamsDrawer: React.FC<ParamsDrawerProps> = ({ open, onClose, onReAnalyze,
 
             <Divider />
 
-            {/* Average Duration */}
+            {/* Duration range */}
             <Box>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-                <Typography variant="overline">Duración Promedio de Clips</Typography>
-                <Stack direction="row" alignItems="center" spacing={0.5}>
-                  <Typography variant="caption" color="text.secondary">IA decide</Typography>
-                  <Switch
-                    size="small"
-                    checked={params.avgDuration === null}
-                    onChange={(_, checked) =>
-                      setParams(p => ({ ...p, avgDuration: checked ? null : 45 }))
-                    }
-                  />
-                </Stack>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
+                <Typography variant="overline">Duración de Clips</Typography>
+                {(params.durationMin !== PLATFORM_PRESETS[params.socialFocus].durationMin ||
+                  params.durationMax !== PLATFORM_PRESETS[params.socialFocus].durationMax) && (
+                  <Chip size="small" label="Personalizado" color="warning" variant="outlined" />
+                )}
               </Stack>
-              {params.avgDuration !== null && (
-                <>
-                  <Slider
-                    min={15} max={120} step={5}
-                    value={params.avgDuration}
-                    valueLabelDisplay="auto"
-                    valueLabelFormat={v => `${v}s`}
-                    onChange={(_, v) => setParams(p => ({ ...p, avgDuration: v as number }))}
-                  />
-                  <Stack direction="row" justifyContent="space-between" alignItems="center">
-                    <Typography variant="caption" color="text.disabled">15s</Typography>
-                    <Chip size="small" label={`${params.avgDuration}s`} color="primary" />
-                    <Typography variant="caption" color="text.disabled">120s</Typography>
-                  </Stack>
-                </>
-              )}
-            </Box>
-
-            <Divider />
-
-            {/* Duration */}
-            <Box>
-              <Typography variant="overline" display="block" sx={{ mb: 1 }}>Duración Ideal (segundos)</Typography>
-              <Stack direction="row" spacing={2} alignItems="center">
-                <TextField
-                  type="number" label="Mínimo"
-                  value={params.durationMin}
-                  onChange={e => setParams(p => ({ ...p, durationMin: parseInt(e.target.value) || 0 }))}
-                  sx={{ width: 120 }}
-                />
-                <Typography color="text.disabled">—</Typography>
-                <TextField
-                  type="number" label="Máximo"
-                  value={params.durationMax}
-                  onChange={e => setParams(p => ({ ...p, durationMax: parseInt(e.target.value) || 0 }))}
-                  sx={{ width: 120 }}
-                />
+              <Slider
+                min={5} max={180} step={5}
+                value={[params.durationMin, params.durationMax]}
+                valueLabelDisplay="auto"
+                valueLabelFormat={v => `${v}s`}
+                onChange={(_, v) => {
+                  const [min, max] = v as number[];
+                  setParams(p => ({ ...p, durationMin: min, durationMax: max }));
+                }}
+              />
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="caption" color="text.disabled">5s</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Recomendado para {params.socialFocus}: {PLATFORM_PRESETS[params.socialFocus].durationMin}–{PLATFORM_PRESETS[params.socialFocus].durationMax}s
+                </Typography>
+                <Typography variant="caption" color="text.disabled">180s</Typography>
               </Stack>
             </Box>
           </Stack>

@@ -43,8 +43,14 @@ export interface AnalysisParams {
   style: ClipStyle;
   socialFocus: SocialFocus;
   keywords: string;
-  avgDuration: number | null;
 }
+
+export const PLATFORM_PRESETS: Record<SocialFocus, { durationMin: number; durationMax: number }> = {
+  'TikTok': { durationMin: 15, durationMax: 45 },
+  'YouTube Shorts': { durationMin: 30, durationMax: 55 },
+  'Instagram Reels': { durationMin: 15, durationMax: 30 },
+  'LinkedIn': { durationMin: 30, durationMax: 90 },
+};
 
 export interface LibraryFolder {
   id: string;
