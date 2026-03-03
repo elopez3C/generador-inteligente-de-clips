@@ -27,6 +27,8 @@ export interface Clip {
   platform?: SocialFocus;
   style?: ClipStyle;
   sourceDuration?: string;
+  thumbnail?: string;
+  isVertical?: boolean;
 }
 
 export type ClipStyle = 'Educativo' | 'Entretenimiento' | 'Informativo' | 'Inspiracional' | 'Ventas';

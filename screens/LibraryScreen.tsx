@@ -43,7 +43,7 @@ import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
-import TuneIcon from '@mui/icons-material/Tune';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import ConfirmDialog from '../components/ConfirmDialog';
 import MockVideoPlayer from '../components/MockVideoPlayer';
@@ -400,16 +400,13 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
           {onReAnalyze && externalParams && (
             <Button
               variant="outlined"
-              startIcon={<TuneIcon />}
+              startIcon={<RefreshIcon />}
               onClick={() => setParamsDrawerOpen(true)}
               sx={{ display: { xs: 'none', sm: 'flex' } }}
             >
               Regenerar clips
             </Button>
           )}
-          <Button variant="contained" startIcon={<AddIcon />} onClick={onNewAnalysis} sx={{ display: { xs: 'none', sm: 'flex' } }}>
-            Nuevo análisis
-          </Button>
         </Stack>
 
         {/* Category filter chips */}
@@ -441,19 +438,24 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
             const duration = (clip.endMinutes * 60 + clip.endSeconds) - (clip.startMinutes * 60 + clip.startSeconds);
             return (
               <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={clip.id}>
-                <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <Card
+                  sx={{ height: '100%', display: 'flex', flexDirection: 'column', cursor: 'pointer', '&:hover': { boxShadow: '0 4px 16px rgba(103,80,164,0.15)', borderColor: 'primary.light' } }}
+                  onClick={() => onUpdateClip && setClipEditorClip(clip)}
+                >
                   {/* Mini video preview */}
-                  <Box sx={{ height: 160, position: 'relative' }}>
+                  <Box sx={{ position: 'relative' }}>
                     <MockVideoPlayer
                       currentTime={clip.startMinutes * 60 + clip.startSeconds}
                       totalDuration={clip.sourceDuration ? parseDuration(clip.sourceDuration) : duration}
                       clipRange={{ start: clip.startMinutes * 60 + clip.startSeconds, end: clip.endMinutes * 60 + clip.endSeconds }}
                       onSeek={() => {}}
                       readOnly
+                      thumbnail={clip.thumbnail}
+                      isVertical={clip.isVertical}
                     />
                     {/* Duration badge */}
                     <Chip
-                      label={`${duration}s`}
+                      label={`${Math.floor(duration / 60)}:${String(duration % 60).padStart(2, '0')}`}
                       size="small"
                       sx={{
                         position: 'absolute', bottom: 8, right: 8,
@@ -465,12 +467,18 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
                   </Box>
 
                   <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', pb: '12px !important' }}>
-                    {/* Timestamp */}
-                    <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5 }}>
-                      {fmt(clip.startMinutes, clip.startSeconds)} — {fmt(clip.endMinutes, clip.endSeconds)}
-                    </Typography>
+                    {/* Timestamp + chips */}
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
+                      <Typography variant="caption" color="text.secondary">
+                        {fmt(clip.startMinutes, clip.startSeconds)} — {fmt(clip.endMinutes, clip.endSeconds)}
+                      </Typography>
+                      <Stack direction="row" spacing={0.5}>
+                        {clip.isManual && <Chip label="Manual" size="small" color="warning" variant="outlined" />}
+                        {clip.isNew && <Chip label="Nuevo" size="small" color="primary" />}
+                      </Stack>
+                    </Stack>
 
-                    {/* Title (editable) */}
+                    {/* Title (click to edit) */}
                     {editingClipId === clip.id ? (
                       <TextField
                         size="small" fullWidth autoFocus
@@ -481,113 +489,56 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
                         sx={{ mb: 0.5 }}
                       />
                     ) : (
-                      <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 0.5 }}>
-                        <Typography variant="subtitle1" fontWeight={600} noWrap sx={{ flexGrow: 1 }}>
-                          {clip.title}
-                        </Typography>
-                        <IconButton size="small" onClick={() => handleStartEditClip(clip.id, clip.title)}
-                          sx={{ opacity: 0.3, '&:hover': { opacity: 1 }, flexShrink: 0 }}>
-                          <EditIcon sx={{ fontSize: 14 }} />
-                        </IconButton>
-                      </Stack>
-                    )}
-
-                    {/* Hook with copy button */}
-                    <Stack direction="row" alignItems="flex-start" spacing={0.5} sx={{ mb: 1.5 }}>
                       <Typography
-                        variant="body2" color="text.secondary"
-                        sx={{
-                          display: '-webkit-box', WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                          fontStyle: 'italic', flexGrow: 1,
-                        }}
+                        variant="subtitle1" fontWeight={600} noWrap
+                        onClick={e => { e.stopPropagation(); handleStartEditClip(clip.id, clip.title); }}
+                        sx={{ mb: 0.5, cursor: 'pointer', '&:hover': { color: 'primary.main' } }}
                       >
-                        &ldquo;{clip.hook}&rdquo;
+                        {clip.title}
                       </Typography>
-                      <Tooltip title="Copiar hook">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleCopyHook(clip.hook)}
-                          sx={{ mt: -0.5, flexShrink: 0 }}
-                        >
-                          <ContentCopyIcon sx={{ fontSize: 16 }} />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
-
-                    {/* Chips */}
-                    <Stack direction="row" spacing={0.5} flexWrap="wrap" sx={{ gap: 0.5, mb: 1.5 }}>
-                      <Chip label={clip.category} size="small" />
-                      {!clip.isManual && (
-                        <Chip
-                          label={`Score: ${clip.score}`}
-                          size="small"
-                          color="primary"
-                          variant="outlined"
-                        />
-                      )}
-                      {clip.isManual && <Chip label="Manual" size="small" color="warning" variant="outlined" />}
-                      {clip.isNew && <Chip label="Nuevo" size="small" color="success" />}
-                    </Stack>
-
-                    {/* AI Justification (collapsible) */}
-                    {!clip.isManual && clip.justification && (
-                      <Accordion
-                        disableGutters
-                        elevation={0}
-                        sx={{
-                          border: '1px solid',
-                          borderColor: 'divider',
-                          borderRadius: 1,
-                          mb: 1.5,
-                          '&:before': { display: 'none' },
-                        }}
-                      >
-                        <AccordionSummary
-                          expandIcon={<ExpandMoreIcon sx={{ fontSize: 18 }} />}
-                          sx={{ minHeight: 36, '& .MuiAccordionSummary-content': { my: 0.5 } }}
-                        >
-                          <Stack direction="row" spacing={0.5} alignItems="center">
-                            <AutoAwesomeIcon sx={{ fontSize: 14, color: 'primary.main' }} />
-                            <Typography variant="caption" fontWeight={600} color="primary.main">
-                              Justificación IA
-                            </Typography>
-                          </Stack>
-                        </AccordionSummary>
-                        <AccordionDetails sx={{ pt: 0, pb: 1.5 }}>
-                          <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
-                            {clip.justification}
-                          </Typography>
-                        </AccordionDetails>
-                      </Accordion>
                     )}
+
+                    {/* Hook */}
+                    <Typography
+                      variant="body2" color="text.secondary"
+                      sx={{
+                        display: '-webkit-box', WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                        fontStyle: 'italic', mb: 2.5,
+                      }}
+                    >
+                      &ldquo;{clip.hook}&rdquo;
+                    </Typography>
+
 
                     {/* Actions */}
-                    <Stack direction="row" justifyContent="space-between" sx={{ mt: 'auto' }}>
+                    <Stack direction="row" spacing={0.5} sx={{ mt: 'auto' }} onClick={e => e.stopPropagation()}>
                       <Button
                         size="small" color="error" startIcon={<DeleteOutlineIcon />}
                         onClick={() => handleDeleteRequest(clip.id, clip.title)}
+                        sx={{ pl: 0 }}
                       >
                         Eliminar
                       </Button>
-                      <Stack direction="row" spacing={0.5}>
-                        {onUpdateClip && (
-                          <Button
-                            size="small"
-                            startIcon={<EditIcon />}
-                            onClick={() => setClipEditorClip(clip)}
-                          >
-                            Editar
-                          </Button>
-                        )}
+                      <Box sx={{ flexGrow: 1 }} />
+                      <Button
+                        size="small"
+                        startIcon={<DownloadIcon />}
+                        onClick={() => downloadClipMetadata(clip)}
+                        sx={{ px: 0.5, color: 'text.primary' }}
+                      >
+                        Descargar
+                      </Button>
+                      {onUpdateClip && (
                         <Button
                           size="small"
-                          startIcon={<DownloadIcon />}
-                          onClick={() => downloadClipMetadata(clip)}
+                          startIcon={<EditIcon />}
+                          onClick={() => setClipEditorClip(clip)}
+                          sx={{ pr: 0, color: 'text.primary' }}
                         >
-                          Descargar
+                          Editar
                         </Button>
-                      </Stack>
+                      )}
                     </Stack>
                   </CardContent>
                 </Card>
@@ -779,7 +730,6 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
           px: 2, py: 1.5, cursor: 'pointer',
           transition: 'background-color 0.15s',
           '&:hover': { bgcolor: 'action.hover' },
-          '&:hover .project-actions': { opacity: 1 },
         }}
       >
         <Avatar
@@ -807,20 +757,22 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
         </Box>
         <Stack
           direction="row" spacing={0.5} className="project-actions"
-          sx={{ opacity: 0, transition: 'opacity 0.15s', flexShrink: 0 }}
+          sx={{ flexShrink: 0 }}
         >
           <Tooltip title="Renombrar">
             <IconButton size="small" onClick={(e) => handleStartEditProject(videoName, e)}>
               <EditIcon sx={{ fontSize: 16 }} />
             </IconButton>
           </Tooltip>
-          {showMove !== false && (
-            <Tooltip title="Mover a carpeta">
-              <IconButton size="small" onClick={(e) => { e.stopPropagation(); setMoveToFolderProject(videoName); }}>
-                <DriveFileMoveIcon sx={{ fontSize: 16 }} />
-              </IconButton>
-            </Tooltip>
-          )}
+          <Tooltip title="Mover a carpeta">
+            <IconButton
+              size="small"
+              onClick={(e) => { e.stopPropagation(); setMoveToFolderProject(videoName); }}
+              sx={{ visibility: showMove === false ? 'hidden' : 'visible' }}
+            >
+              <DriveFileMoveIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+          </Tooltip>
         </Stack>
         {mostRecent > 0 && (
           <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
@@ -913,7 +865,6 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
                     px: 2, py: 1.5, cursor: 'pointer',
                     transition: 'background-color 0.15s',
                     '&:hover': { bgcolor: 'action.hover' },
-                    '&:hover .folder-actions': { opacity: 1 },
                   }}
                 >
                   <Avatar sx={{ bgcolor: 'warning.light', color: 'warning.main', width: 40, height: 40 }}
@@ -940,7 +891,7 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
                   </Box>
                   <Stack
                     direction="row" spacing={0.5} className="folder-actions"
-                    sx={{ opacity: 0, transition: 'opacity 0.15s', flexShrink: 0 }}
+                    sx={{ flexShrink: 0 }}
                   >
                     <Tooltip title="Renombrar carpeta">
                       <IconButton size="small" onClick={(e) => handleStartEditFolder(folder.id, folder.name, e)}>
@@ -992,14 +943,6 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
           ))}
         </Card>
       )}
-
-      {/* Mobile FAB */}
-      <Fab
-        variant="extended" color="primary" onClick={onNewAnalysis}
-        sx={{ position: 'fixed', bottom: 24, right: 24, display: { sm: 'none' }, zIndex: 1100 }}
-      >
-        <AddIcon sx={{ mr: 1 }} /> Nuevo análisis
-      </Fab>
 
       {/* Create folder dialog */}
       <Dialog open={createFolderOpen} onClose={() => setCreateFolderOpen(false)} maxWidth="xs" fullWidth>

@@ -257,11 +257,6 @@ const App: React.FC = () => {
           )}
 
           <Box sx={{ flexGrow: 1 }} />
-
-          {/* Primary action */}
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenUpload} size="small">
-            Nuevo análisis
-          </Button>
         </Toolbar>
       </AppBar>
 
@@ -321,7 +316,7 @@ const App: React.FC = () => {
       {/* Footer */}
       <Box component="footer" sx={{ py: 3, textAlign: 'center', borderTop: '1px solid', borderColor: 'divider' }}>
         <Typography variant="caption" color="text.disabled">
-          © {new Date().getFullYear()} AI Clip Master · Potenciado por Gemini 2.5 Pro
+          © {new Date().getFullYear()} El Confidencial
         </Typography>
       </Box>
 

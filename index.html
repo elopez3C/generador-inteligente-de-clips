@@ -10,6 +10,16 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     body { margin: 0; }
+    /* Restore MUI cursors when agentation crosshair mode is active */
+    #root button, #root a, #root [role="button"], #root label,
+    #root input, #root textarea, #root select,
+    #root .MuiButtonBase-root, #root .MuiSlider-root,
+    #root .MuiIconButton-root, #root .MuiMenuItem-root {
+      cursor: pointer !important;
+    }
+    #root input, #root textarea, #root [contenteditable="true"] {
+      cursor: text !important;
+    }
   </style>
 </head>
 <body>

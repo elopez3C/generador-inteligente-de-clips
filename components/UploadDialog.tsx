@@ -10,10 +10,8 @@ import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Avatar from '@mui/material/Avatar';
 import TextField from '@mui/material/TextField';
-import Slider from '@mui/material/Slider';
 import Paper from '@mui/material/Paper';
 import Grid from '@mui/material/Grid';
-import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
@@ -21,8 +19,9 @@ import Switch from '@mui/material/Switch';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import VideoFileIcon from '@mui/icons-material/VideoFile';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import CloseIcon from '@mui/icons-material/Close';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
 import { AnalysisParams, ClipStyle, SocialFocus, FileData } from '../types';
 
 const VIDEO_FORMATS = ['.MP4', '.MOV', '.AVI', '.MKV', '.WEBM'];
@@ -58,35 +57,34 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ open, initialParams, onClos
       fullWidth
       TransitionProps={{ onExited: handleExited }}
     >
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Stack direction="row" spacing={1} alignItems="center">
-          <AutoAwesomeIcon color="primary" fontSize="small" />
-          <Typography variant="h6" component="span">Nuevo análisis</Typography>
-        </Stack>
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 4, pt: 4, pb: 2 }}>
+        <Typography variant="h6" component="span">Nuevo análisis</Typography>
         <IconButton onClick={onClose} size="small">
           <CloseIcon fontSize="small" />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ p: 0 }}>
+      <DialogContent sx={{ px: 4, py: 0 }}>
         <Grid container sx={{ minHeight: 420 }}>
           {/* Left column: drop zone */}
           <Grid size={{ xs: 12, md: 5 }}>
-            <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box sx={{ pr: 2, height: '100%', display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Paper
                 variant="outlined"
-                onClick={handleSimulate}
+                onClick={!localFile ? handleSimulate : undefined}
                 onDragOver={e => { e.preventDefault(); setDragging(true); }}
                 onDragLeave={() => setDragging(false)}
                 onDrop={e => { e.preventDefault(); setDragging(false); handleSimulate(); }}
                 sx={{
                   flexGrow: 1,
-                  borderStyle: 'dashed',
-                  borderRadius: 3,
-                  borderWidth: 2,
-                  borderColor: dragging ? 'primary.main' : localFile ? 'primary.light' : 'divider',
+                  border: localFile ? '1px solid' : 'none',
+                  borderColor: localFile ? 'primary.light' : undefined,
+                  borderRadius: '16px',
+                  ...(!localFile && {
+                    backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='${dragging ? '%236750A4' : 'rgba(0%2C0%2C0%2C0.3)'}' stroke-width='1.5' stroke-dasharray='8%2c 5' stroke-linecap='round'/%3e%3c/svg%3e")`,
+                  }),
                   bgcolor: dragging ? 'primary.light' : localFile ? 'rgba(103,80,164,0.04)' : 'background.paper',
-                  cursor: 'pointer',
+                  cursor: localFile ? 'default' : 'pointer',
                   transition: 'all 0.2s',
                   display: 'flex',
                   flexDirection: 'column',
@@ -94,51 +92,54 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ open, initialParams, onClos
                   justifyContent: 'center',
                   textAlign: 'center',
                   p: 3,
-                  '&:hover': { borderColor: 'primary.main', bgcolor: 'rgba(103,80,164,0.04)' },
+                  ...(!localFile && {
+                    '&:hover': {
+                      backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%236750A4' stroke-width='1.5' stroke-dasharray='8%2c 5' stroke-linecap='round'/%3e%3c/svg%3e")`,
+                      bgcolor: 'rgba(103,80,164,0.04)',
+                    },
+                  }),
                 }}
               >
-                <CloudUploadIcon sx={{ fontSize: 40, color: 'primary.light', mb: 1.5 }} />
-                <Typography variant="subtitle2" sx={{ mb: 0.5 }}>Sube tu archivo</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5 }}>
-                  Arrastra aquí o haz clic para seleccionar
-                </Typography>
-                <Stack direction="row" justifyContent="center" flexWrap="wrap" gap={0.5}>
-                  {VIDEO_FORMATS.map(f => <Chip key={f} label={f} size="small" variant="outlined" />)}
-                  <Divider orientation="vertical" flexItem />
-                  {AUDIO_FORMATS.map(f => <Chip key={f} label={f} size="small" variant="outlined" />)}
-                </Stack>
-              </Paper>
-
-              {localFile && (
-                <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2 }}>
-                  <Stack direction="row" alignItems="center" spacing={1.5}>
-                    <Avatar sx={{ bgcolor: 'primary.main', width: 36, height: 36 }}>
-                      <VideoFileIcon fontSize="small" />
+                {!localFile ? (
+                  <>
+                    <CloudUploadIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1.5 }} />
+                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>Sube tu archivo</Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5 }}>
+                      Arrastra aquí o haz clic para seleccionar
+                    </Typography>
+                    <Stack direction="row" justifyContent="center" flexWrap="wrap" gap={0.5}>
+                      {VIDEO_FORMATS.map(f => <Chip key={f} label={f} size="small" variant="outlined" />)}
+                      {AUDIO_FORMATS.map(f => <Chip key={f} label={f} size="small" variant="outlined" />)}
+                    </Stack>
+                  </>
+                ) : (
+                  <>
+                    <Avatar sx={{ bgcolor: 'primary.main', width: 56, height: 56, mb: 2 }}>
+                      <VideoFileIcon />
                     </Avatar>
-                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                      <Typography variant="body2" noWrap>{localFile.name}</Typography>
-                      <Stack direction="row" spacing={0.5} sx={{ mt: 0.25 }}>
-                        <Chip size="small" label={`${localFile.size} MB`} />
-                        <Chip size="small" label={`⏱ ${localFile.duration}`} />
-                      </Stack>
-                    </Box>
-                    <IconButton
+                    <Typography variant="subtitle2" noWrap sx={{ maxWidth: '100%', mb: 0.5 }}>{localFile.name}</Typography>
+                    <Stack direction="row" spacing={0.5} sx={{ mb: 2 }}>
+                      <Chip size="small" label={`${localFile.size} MB`} />
+                      <Chip size="small" label={`⏱ ${localFile.duration}`} />
+                    </Stack>
+                    <Button
                       size="small"
+                      variant="outlined"
+                      color="error"
+                      startIcon={<DeleteOutlineIcon />}
                       onClick={e => { e.stopPropagation(); setLocalFile(null); }}
-                      sx={{ color: 'error.light', '&:hover': { color: 'error.main' } }}
                     >
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                  </Stack>
-                </Paper>
-              )}
+                      Eliminar
+                    </Button>
+                  </>
+                )}
+              </Paper>
             </Box>
           </Grid>
 
           {/* Right column: params */}
-          <Grid size={{ xs: 12, md: 7 }}
-            sx={{ borderLeft: { md: '1px solid' }, borderColor: 'divider' }}>
-            <Box sx={{ p: 3 }}>
+          <Grid size={{ xs: 12, md: 7 }}>
+            <Box sx={{ pl: 2 }}>
               <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2.5 }}>
                 <Typography variant="overline" color="text.secondary">Configuración del Análisis</Typography>
                 <Button size="small" onClick={() => setLocalParams(initialParams)}>
@@ -175,23 +176,41 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ open, initialParams, onClos
 
                 <Box>
                   <Typography variant="overline" display="block" sx={{ mb: 1 }}>Número de Clips</Typography>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Slider
-                      min={1} max={15} step={1}
+                  <Stack direction="row" alignItems="center" spacing={0}>
+                    <IconButton
+                      size="small"
+                      onClick={() => setLocalParams(p => ({ ...p, numClips: Math.max(1, p.numClips - 1) }))}
+                      disabled={localParams.numClips <= 1}
+                      sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '4px 0 0 4px', height: 36, width: 36 }}
+                    >
+                      <RemoveIcon fontSize="small" />
+                    </IconButton>
+                    <TextField
+                      size="small"
                       value={localParams.numClips}
-                      valueLabelDisplay="auto"
-                      onChange={(_, v) => setLocalParams(p => ({ ...p, numClips: v as number }))}
-                      sx={{ flexGrow: 1 }}
+                      onChange={e => {
+                        const v = parseInt(e.target.value);
+                        if (!isNaN(v) && v >= 1 && v <= 15) setLocalParams(p => ({ ...p, numClips: v }));
+                      }}
+                      inputProps={{ style: { textAlign: 'center', width: 40, padding: '6px 0' } }}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0 } }}
                     />
-                    <Chip size="small" label={localParams.numClips} color="primary" sx={{ minWidth: 36 }} />
+                    <IconButton
+                      size="small"
+                      onClick={() => setLocalParams(p => ({ ...p, numClips: Math.min(15, p.numClips + 1) }))}
+                      disabled={localParams.numClips >= 15}
+                      sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '0 4px 4px 0', height: 36, width: 36 }}
+                    >
+                      <AddIcon fontSize="small" />
+                    </IconButton>
                   </Stack>
                 </Box>
 
                 <Box>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
                     <Typography variant="overline">Duración Promedio de Clips</Typography>
                     <Stack direction="row" alignItems="center" spacing={0.5}>
-                      <Typography variant="caption" color="text.secondary">IA decide</Typography>
+                      <Typography variant="caption" color="text.secondary">Automático</Typography>
                       <Switch
                         size="small"
                         checked={localParams.avgDuration === null}
@@ -201,48 +220,59 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ open, initialParams, onClos
                       />
                     </Stack>
                   </Stack>
-                  {localParams.avgDuration !== null && (
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Slider
-                        min={15} max={120} step={5}
-                        value={localParams.avgDuration}
-                        valueLabelDisplay="auto"
-                        valueLabelFormat={v => `${v}s`}
-                        onChange={(_, v) => setLocalParams(p => ({ ...p, avgDuration: v as number }))}
-                        sx={{ flexGrow: 1 }}
+                    <Stack direction="row" alignItems="center" spacing={0} sx={{ opacity: localParams.avgDuration === null ? 0.4 : 1, pointerEvents: localParams.avgDuration === null ? 'none' : 'auto' }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => setLocalParams(p => ({ ...p, avgDuration: Math.max(15, (p.avgDuration ?? 45) - 5) }))}
+                        disabled={(localParams.avgDuration ?? 45) <= 15}
+                        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '4px 0 0 4px', height: 36, width: 36 }}
+                      >
+                        <RemoveIcon fontSize="small" />
+                      </IconButton>
+                      <TextField
+                        size="small"
+                        value={`${Math.floor((localParams.avgDuration ?? 45) / 60)}:${String((localParams.avgDuration ?? 45) % 60).padStart(2, '0')}`}
+                        onChange={e => {
+                          const raw = e.target.value;
+                          let secs: number | null = null;
+                          if (raw.includes(':')) {
+                            const [m, s] = raw.split(':');
+                            const mins = parseInt(m); const sec = parseInt(s || '0');
+                            if (!isNaN(mins) && !isNaN(sec)) secs = mins * 60 + sec;
+                          } else {
+                            const v = parseInt(raw.replace('s', ''));
+                            if (!isNaN(v)) secs = v;
+                          }
+                          if (secs !== null && secs >= 15 && secs <= 600) setLocalParams(p => ({ ...p, avgDuration: secs }));
+                        }}
+                        inputProps={{ style: { textAlign: 'center', width: 48, padding: '6px 0' } }}
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0 } }}
                       />
-                      <Chip size="small" label={`${localParams.avgDuration}s`} color="primary" sx={{ minWidth: 48 }} />
+                      <IconButton
+                        size="small"
+                        onClick={() => setLocalParams(p => ({ ...p, avgDuration: Math.min(600, (p.avgDuration ?? 45) + 5) }))}
+                        disabled={(localParams.avgDuration ?? 45) >= 600}
+                        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '0 4px 4px 0', height: 36, width: 36 }}
+                      >
+                        <AddIcon fontSize="small" />
+                      </IconButton>
                     </Stack>
-                  )}
                 </Box>
 
-                <Box>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-                    <Typography variant="overline">Score Viral Mínimo</Typography>
-                    <Chip size="small" label={localParams.minScore.toFixed(1)} color="primary" />
-                  </Stack>
-                  <Slider
-                    min={6.0} max={9.0} step={0.5}
-                    value={localParams.minScore}
-                    valueLabelDisplay="auto"
-                    onChange={(_, v) => setLocalParams(p => ({ ...p, minScore: v as number }))}
-                  />
-                </Box>
               </Stack>
             </Box>
           </Grid>
         </Grid>
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, py: 2 }}>
+      <DialogActions sx={{ px: 4, pb: 4, pt: 2 }}>
         <Button variant="outlined" onClick={onClose}>Cancelar</Button>
         <Button
           variant="contained"
-          startIcon={<AutoAwesomeIcon />}
           disabled={!localFile}
           onClick={() => localFile && onStart(localFile, localParams)}
         >
-          Empezar Análisis Inteligente
+          Empezar Análisis
         </Button>
       </DialogActions>
     </Dialog>

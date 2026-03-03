@@ -10,6 +10,7 @@ export const MOCK_ANALYSIS_CLIPS: Clip[] = [
     startMinutes: 2, startSeconds: 15, endMinutes: 3, endSeconds: 45,
     justification: 'Gancho de curiosidad muy fuerte + estadística impactante + solución práctica al final. Estructura perfecta para viralizarse en TikTok.',
     selected: false,
+    thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=640&h=360&fit=crop',
   },
   {
     id: 'c2', number: 2,
@@ -20,6 +21,7 @@ export const MOCK_ANALYSIS_CLIPS: Clip[] = [
     startMinutes: 10, startSeconds: 45, endMinutes: 12, endSeconds: 10,
     justification: 'Momento emocional y relatable. Las historias de origen conectan profundamente con audiencias emprendedoras y generan alto engagement.',
     selected: false,
+    thumbnail: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?w=640&h=360&fit=crop',
   },
   {
     id: 'c3', number: 3,
@@ -30,6 +32,7 @@ export const MOCK_ANALYSIS_CLIPS: Clip[] = [
     startMinutes: 22, startSeconds: 10, endMinutes: 23, endSeconds: 40,
     justification: 'Contenido de tipo listicle con IA como tema. Alto potencial de guardado y compartido. Muy alineado con LinkedIn.',
     selected: false,
+    thumbnail: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=640&h=360&fit=crop',
   },
   {
     id: 'c4', number: 4,
@@ -40,6 +43,8 @@ export const MOCK_ANALYSIS_CLIPS: Clip[] = [
     startMinutes: 31, startSeconds: 0, endMinutes: 32, endSeconds: 20,
     justification: 'Desafía creencias comunes con una perspectiva contraintuitiva. Genera debate en los comentarios.',
     selected: false,
+    thumbnail: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=360&h=640&fit=crop',
+    isVertical: true,
   },
   {
     id: 'c5', number: 5,
@@ -50,6 +55,7 @@ export const MOCK_ANALYSIS_CLIPS: Clip[] = [
     startMinutes: 38, startSeconds: 30, endMinutes: 40, endSeconds: 0,
     justification: 'Prueba social + promesa de replicabilidad. Muy alineado con audiencias de emprendimiento.',
     selected: false,
+    thumbnail: 'https://images.unsplash.com/photo-1553877522-43269d4ea984?w=640&h=360&fit=crop',
   },
 ];
 
@@ -250,6 +256,7 @@ export const MOCK_LIBRARY_CLIPS: Clip[] = [
     platform: 'TikTok',
     style: 'Informativo',
     sourceDuration: '1:12:30',
+    thumbnail: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=640&h=360&fit=crop',
   },
   {
     id: 'h2', number: 2,
@@ -266,6 +273,7 @@ export const MOCK_LIBRARY_CLIPS: Clip[] = [
     platform: 'TikTok',
     style: 'Informativo',
     sourceDuration: '1:12:30',
+    thumbnail: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=640&h=360&fit=crop',
   },
   {
     id: 'h3', number: 1,
@@ -282,6 +290,7 @@ export const MOCK_LIBRARY_CLIPS: Clip[] = [
     platform: 'Instagram Reels',
     style: 'Educativo',
     sourceDuration: '45:20',
+    thumbnail: 'https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=640&h=360&fit=crop',
   },
   {
     id: 'h4', number: 2,
@@ -298,6 +307,7 @@ export const MOCK_LIBRARY_CLIPS: Clip[] = [
     platform: 'Instagram Reels',
     style: 'Educativo',
     sourceDuration: '45:20',
+    thumbnail: 'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=640&h=360&fit=crop',
   },
   {
     id: 'h5', number: 3,
@@ -314,6 +324,8 @@ export const MOCK_LIBRARY_CLIPS: Clip[] = [
     platform: 'Instagram Reels',
     style: 'Educativo',
     sourceDuration: '45:20',
+    thumbnail: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=360&h=640&fit=crop',
+    isVertical: true,
   },
   {
     id: 'h6', number: 1,
@@ -330,6 +342,7 @@ export const MOCK_LIBRARY_CLIPS: Clip[] = [
     platform: 'LinkedIn',
     style: 'Informativo',
     sourceDuration: '58:15',
+    thumbnail: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=640&h=360&fit=crop',
   },
   {
     id: 'h7', number: 2,
@@ -346,5 +359,6 @@ export const MOCK_LIBRARY_CLIPS: Clip[] = [
     platform: 'LinkedIn',
     style: 'Informativo',
     sourceDuration: '58:15',
+    thumbnail: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=640&h=360&fit=crop',
   },
 ];

@@ -17,10 +17,12 @@ interface MockVideoPlayerProps {
   clipRange?: { start: number; end: number };
   onSeek: (time: number) => void;
   readOnly?: boolean;
+  thumbnail?: string;
+  isVertical?: boolean;
 }
 
 const MockVideoPlayer: React.FC<MockVideoPlayerProps> = ({
-  currentTime, totalDuration, clipRange, onSeek, readOnly = false,
+  currentTime, totalDuration, clipRange, onSeek, readOnly = false, thumbnail, isVertical = false,
 }) => {
   const [playing, setPlaying] = useState(false);
   const [animTime, setAnimTime] = useState(clipRange?.start ?? currentTime);
@@ -77,8 +79,7 @@ const MockVideoPlayer: React.FC<MockVideoPlayerProps> = ({
       sx={{
         position: 'relative',
         width: '100%',
-        aspectRatio: readOnly ? undefined : '16/9',
-        height: readOnly ? '100%' : undefined,
+        aspectRatio: '16/9',
         bgcolor: 'grey.900',
         borderRadius: readOnly ? 0 : 2,
         overflow: 'hidden',
@@ -88,36 +89,64 @@ const MockVideoPlayer: React.FC<MockVideoPlayerProps> = ({
         alignItems: 'center',
       }}
     >
-      {/* Background waveform decoration */}
-      <Stack
-        direction="row" spacing={0.25}
-        sx={{
-          position: 'absolute',
-          bottom: readOnly ? '30%' : '35%',
-          left: '10%', right: '10%',
-          height: 40,
-          alignItems: 'flex-end',
-          opacity: 0.15,
-        }}
-      >
-        {Array.from({ length: waveBars }).map((_, i) => {
-          const h = 8 + Math.sin(i * 0.8) * 16 + Math.cos(i * 1.3) * 12;
-          const progress = totalDuration > 0 ? displayTime / totalDuration : 0;
-          const barProgress = i / waveBars;
-          return (
-            <Box
-              key={i}
-              sx={{
-                flex: 1,
-                height: Math.max(4, h),
-                bgcolor: barProgress <= progress ? 'primary.main' : 'grey.500',
-                borderRadius: 0.5,
-                transition: 'background-color 0.3s',
-              }}
-            />
-          );
-        })}
-      </Stack>
+      {/* Thumbnail background */}
+      {thumbnail && (
+        <Box
+          component="img"
+          src={thumbnail}
+          sx={{
+            position: 'absolute',
+            ...(isVertical ? {
+              height: '100%',
+              width: 'auto',
+              left: '50%',
+              transform: 'translateX(-50%)',
+            } : {
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }),
+          }}
+        />
+      )}
+
+      {/* Dark overlay for controls visibility */}
+      {thumbnail && (
+        <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(0,0,0,0.25)' }} />
+      )}
+
+      {/* Background waveform decoration (only when no thumbnail) */}
+      {!thumbnail && (
+        <Stack
+          direction="row" spacing={0.25}
+          sx={{
+            position: 'absolute',
+            bottom: readOnly ? '30%' : '35%',
+            left: '10%', right: '10%',
+            height: 40,
+            alignItems: 'flex-end',
+            opacity: 0.15,
+          }}
+        >
+          {Array.from({ length: waveBars }).map((_, i) => {
+            const h = 8 + Math.sin(i * 0.8) * 16 + Math.cos(i * 1.3) * 12;
+            const progress = totalDuration > 0 ? displayTime / totalDuration : 0;
+            const barProgress = i / waveBars;
+            return (
+              <Box
+                key={i}
+                sx={{
+                  flex: 1,
+                  height: Math.max(4, h),
+                  bgcolor: barProgress <= progress ? 'primary.main' : 'grey.500',
+                  borderRadius: 0.5,
+                  transition: 'background-color 0.3s',
+                }}
+              />
+            );
+          })}
+        </Stack>
+      )}
 
       {/* Center icon / play overlay for readOnly */}
       {readOnly ? (
@@ -125,8 +154,8 @@ const MockVideoPlayer: React.FC<MockVideoPlayerProps> = ({
           onClick={handleReadOnlyToggle}
           sx={{
             color: 'white',
-            bgcolor: playing ? 'rgba(0,0,0,0.5)' : 'rgba(103,80,164,0.7)',
-            '&:hover': { bgcolor: playing ? 'rgba(0,0,0,0.7)' : 'rgba(103,80,164,0.9)' },
+            bgcolor: 'rgba(0,0,0,0.7)',
+            '&:hover': { bgcolor: 'rgba(0,0,0,0.85)' },
             width: 40, height: 40,
             transition: 'all 0.2s',
             zIndex: 1,
@@ -138,7 +167,7 @@ const MockVideoPlayer: React.FC<MockVideoPlayerProps> = ({
         <MovieIcon sx={{ fontSize: 48, color: 'grey.600', mb: 1 }} />
       )}
 
-      {/* Clip range indicator */}
+      {/* Clip range indicator (edit mode only) */}
       {clipRange && !readOnly && (
         <Chip
           size="small"
@@ -153,14 +182,14 @@ const MockVideoPlayer: React.FC<MockVideoPlayerProps> = ({
         />
       )}
 
-      {/* Banner */}
+      {/* Banner (edit mode only) */}
       {!readOnly && (
         <Typography variant="caption" sx={{ color: 'grey.600', mb: 2 }}>
           Vista previa disponible próximamente
         </Typography>
       )}
 
-      {/* Controls */}
+      {/* Controls (edit mode only) */}
       {!readOnly && (
         <Stack direction="row" spacing={1} alignItems="center">
           <IconButton onClick={handleBack5} sx={{ color: 'grey.400' }} size="small">
@@ -183,18 +212,20 @@ const MockVideoPlayer: React.FC<MockVideoPlayerProps> = ({
         </Stack>
       )}
 
-      {/* Timecode */}
-      <Typography
-        variant={readOnly ? 'caption' : 'body2'}
-        sx={{
-          color: 'grey.400',
-          fontVariantNumeric: 'tabular-nums',
-          mt: readOnly ? 0.5 : 1.5,
-          fontWeight: 600,
-        }}
-      >
-        {formatDuration(displayTime)} / {formatDuration(totalDuration)}
-      </Typography>
+      {/* Timecode (edit mode only) */}
+      {!readOnly && (
+        <Typography
+          variant="body2"
+          sx={{
+            color: 'grey.400',
+            fontVariantNumeric: 'tabular-nums',
+            mt: 1.5,
+            fontWeight: 600,
+          }}
+        >
+          {formatDuration(displayTime)} / {formatDuration(totalDuration)}
+        </Typography>
+      )}
     </Box>
   );
 };

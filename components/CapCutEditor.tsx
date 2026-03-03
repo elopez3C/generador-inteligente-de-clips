@@ -19,6 +19,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import CheckIcon from '@mui/icons-material/Check';
 import MovieIcon from '@mui/icons-material/Movie';
 import FlagIcon from '@mui/icons-material/Flag';
+import EditIcon from '@mui/icons-material/Edit';
 import DescriptionIcon from '@mui/icons-material/Description';
 import SearchIcon from '@mui/icons-material/Search';
 import { Clip, TranscriptGroup } from '../types';
@@ -42,7 +43,9 @@ function timeToSeconds(timeStr: string): number {
 const CapCutEditor: React.FC<CapCutEditorProps> = ({
   open, onClose, onSave, totalDuration, nextNumber, transcriptGroups,
 }) => {
+  const defaultTitle = `Clip Manual #${nextNumber}`;
   const [title, setTitle] = useState('');
+  const [editingTitle, setEditingTitle] = useState(false);
   const [range, setRange] = useState<[number, number]>([0, Math.min(60, totalDuration)]);
   const [playhead, setPlayhead] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -62,15 +65,14 @@ const CapCutEditor: React.FC<CapCutEditorProps> = ({
     }
   }, [search]);
 
-  // Auto-scroll to range start on open
   useEffect(() => {
     if (open && scrollRef.current) {
       const timer = setTimeout(() => {
         const el = scrollRef.current?.querySelector('[data-in-range="true"]');
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (el && scrollRef.current) {
+          scrollRef.current.scrollTop = (el as HTMLElement).offsetTop - scrollRef.current.offsetTop - 8;
         }
-      }, 200);
+      }, 300);
       return () => clearTimeout(timer);
     }
   }, [open]);
@@ -89,18 +91,15 @@ const CapCutEditor: React.FC<CapCutEditorProps> = ({
     const startS = Math.round(range[0] % 60);
     const endM = Math.floor(range[1] / 60);
     const endS = Math.round(range[1] % 60);
-
     const clip: Clip = {
       id: `manual-${Date.now()}`,
       number: nextNumber,
-      title: title.trim() || `Clip Manual #${nextNumber}`,
+      title: title.trim() || defaultTitle,
       score: 0,
       hook: 'Clip definido manualmente.',
       category: 'Manual',
-      startMinutes: startM,
-      startSeconds: startS,
-      endMinutes: endM,
-      endSeconds: endS,
+      startMinutes: startM, startSeconds: startS,
+      endMinutes: endM, endSeconds: endS,
       justification: 'Creado manualmente desde el editor de video.',
       selected: true,
       isManual: true,
@@ -112,15 +111,10 @@ const CapCutEditor: React.FC<CapCutEditorProps> = ({
   };
 
   const setStartFromLine = (timeSec: number) => {
-    if (timeSec < range[1]) {
-      setRange([timeSec, range[1]]);
-    }
+    if (timeSec < range[1]) setRange([timeSec, range[1]]);
   };
-
   const setEndFromLine = (timeSec: number) => {
-    if (timeSec > range[0]) {
-      setRange([range[0], timeSec]);
-    }
+    if (timeSec > range[0]) setRange([range[0], timeSec]);
   };
 
   const getLineStatus = (timeSec: number): 'start' | 'end' | 'in' | null => {
@@ -134,337 +128,247 @@ const CapCutEditor: React.FC<CapCutEditorProps> = ({
     <Dialog
       open={open}
       onClose={onClose}
-      fullScreen
+      maxWidth={false}
       PaperProps={{
-        sx: { bgcolor: '#1a1a2e', color: 'white' },
+        sx: {
+          width: 'calc(100vw - 80px)',
+          maxWidth: 'calc(100vw - 80px)',
+          height: 'calc(100vh - 80px)',
+          borderRadius: 3,
+          m: '40px',
+        },
       }}
     >
-      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
 
         {/* Top toolbar */}
         <Stack
           direction="row"
           alignItems="center"
-          sx={{ px: 2, py: 1, borderBottom: '1px solid rgba(255,255,255,0.1)', flexShrink: 0 }}
+          sx={{ px: 3, py: 1.5, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}
         >
-          <IconButton onClick={onClose} sx={{ color: 'grey.400' }}>
+          {editingTitle ? (
+            <TextField
+              size="small"
+              value={title}
+              placeholder={defaultTitle}
+              onChange={e => setTitle(e.target.value)}
+              onBlur={() => setEditingTitle(false)}
+              onKeyDown={e => e.key === 'Enter' && setEditingTitle(false)}
+              autoFocus
+              sx={{ maxWidth: 360 }}
+            />
+          ) : (
+            <Stack direction="row" alignItems="center" spacing={0.5}>
+              <Typography variant="h6" fontWeight={600}>{title || defaultTitle}</Typography>
+              <IconButton size="small" onClick={() => setEditingTitle(true)}>
+                <EditIcon sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Stack>
+          )}
+          <Box sx={{ flexGrow: 1 }} />
+          <IconButton onClick={onClose}>
             <CloseIcon />
           </IconButton>
-          <TextField
-            size="small"
-            placeholder={`Clip Manual #${nextNumber}`}
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            sx={{
-              ml: 1, flexGrow: 1, maxWidth: 400,
-              '& .MuiOutlinedInput-root': {
-                bgcolor: 'rgba(255,255,255,0.06)',
-                color: 'white',
-                borderRadius: 2,
-                '& fieldset': { borderColor: 'rgba(255,255,255,0.15)' },
-                '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
-                '&.Mui-focused fieldset': { borderColor: '#7c5cbf' },
-              },
-              '& .MuiInputBase-input::placeholder': { color: 'grey.500' },
-            }}
-          />
-          <Box sx={{ flexGrow: 1 }} />
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<CheckIcon />}
-            onClick={handleSave}
-            disabled={!isValid}
-            sx={{ borderRadius: 2 }}
-          >
-            Guardar clip
-          </Button>
         </Stack>
 
-        {/* Scrollable content area */}
-        <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
-          <Box sx={{ maxWidth: 720, mx: 'auto', p: 3 }}>
+        {/* Two-column body: Transcript LEFT, Video RIGHT */}
+        <Box sx={{ flexGrow: 1, display: 'flex', overflow: 'hidden' }}>
 
-            {/* Video preview */}
+          {/* LEFT — Transcript */}
+          <Box sx={{ width: '45%', flexShrink: 0, display: 'flex', flexDirection: 'column', borderRight: '1px solid', borderColor: 'divider' }}>
+            <Box sx={{ p: 1.5, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <DescriptionIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                <Typography variant="subtitle2" sx={{ color: 'text.secondary', flexShrink: 0, fontSize: '0.8rem' }}>
+                  Transcripción
+                </Typography>
+                <Box sx={{ flexGrow: 1 }} />
+                <TextField
+                  size="small"
+                  placeholder="Buscar..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+                        </InputAdornment>
+                      ),
+                      endAdornment: search ? (
+                        <InputAdornment position="end">
+                          <Stack direction="row" spacing={0.5} alignItems="center">
+                            {searchMatchCount > 0 && (
+                              <Chip label={searchMatchCount} size="small" sx={{ height: 18, fontSize: '0.6rem' }} color="primary" />
+                            )}
+                            <IconButton size="small" onClick={() => setSearch('')} sx={{ p: 0.25 }}>
+                              <CloseIcon sx={{ fontSize: 12 }} />
+                            </IconButton>
+                          </Stack>
+                        </InputAdornment>
+                      ) : null,
+                    },
+                  }}
+                  sx={{ maxWidth: 180 }}
+                />
+              </Stack>
+            </Box>
+
+            <Box ref={scrollRef} sx={{ flexGrow: 1, overflowY: 'auto', p: 2.5 }}>
+              <Stack spacing={2}>
+                {transcriptGroups.map((group, gi) => (
+                  <Box key={gi}>
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+                      <Avatar
+                        sx={{ width: 24, height: 24, fontSize: 10, fontWeight: 700, bgcolor: group.speakerColor === 'primary' ? 'primary.main' : 'secondary.main' }}
+                      >
+                        {group.speaker.charAt(group.speaker.length - 1)}
+                      </Avatar>
+                      <Typography variant="overline" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>
+                        {group.speaker}
+                      </Typography>
+                    </Stack>
+                    <Stack spacing={0.25} sx={{ pl: 4 }}>
+                      {group.lines.map((line, li) => {
+                        const lineSec = timeToSeconds(line.time);
+                        const status = getLineStatus(lineSec);
+                        const isInRange = status !== null;
+                        const isStart = status === 'start';
+                        const isEnd = status === 'end';
+                        const q = search.trim().toLowerCase();
+                        const hasMatch = q && line.text.toLowerCase().includes(q);
+                        const dimmed = q && !hasMatch;
+
+                        const renderText = () => {
+                          if (!q || !hasMatch) return line.text;
+                          const idx = line.text.toLowerCase().indexOf(q);
+                          return (
+                            <>
+                              {line.text.slice(0, idx)}
+                              <Box component="span" sx={{ bgcolor: 'warning.light', borderRadius: 0.5, px: 0.25 }}>
+                                {line.text.slice(idx, idx + q.length)}
+                              </Box>
+                              {line.text.slice(idx + q.length)}
+                            </>
+                          );
+                        };
+
+                        return (
+                          <Box
+                            key={li}
+                            data-time={line.time}
+                            data-in-range={isInRange ? 'true' : undefined}
+                            data-search-match={hasMatch ? 'true' : undefined}
+                            sx={{
+                              display: 'flex', alignItems: 'flex-start', gap: 0.75, py: 0.5, px: 0.75,
+                              borderRadius: 1, fontSize: '0.8rem',
+                              bgcolor: isInRange ? 'success.light' : 'transparent',
+                              borderLeft: '3px solid',
+                              borderColor: isStart ? 'success.main' : isEnd ? 'error.main' : isInRange ? 'success.light' : 'transparent',
+                              opacity: dimmed ? 0.35 : 1,
+                              transition: 'all 0.15s',
+                              '&:hover': {
+                                bgcolor: isInRange ? 'rgba(76,175,80,0.15)' : 'action.hover',
+                                '& .flag-buttons': { opacity: 1 },
+                              },
+                            }}
+                          >
+                            <Typography variant="caption" sx={{ fontVariantNumeric: 'tabular-nums', minWidth: 32, pt: 0.15, flexShrink: 0, color: 'text.disabled', fontSize: '0.65rem' }}>
+                              {line.time}
+                            </Typography>
+                            <Typography variant="body2" sx={{ flexGrow: 1, lineHeight: 1.5, color: isInRange ? 'text.primary' : 'text.secondary', fontSize: '0.8rem' }}>
+                              {renderText()}
+                            </Typography>
+                            <Stack direction="row" spacing={0.25} className="flag-buttons" sx={{ flexShrink: 0, opacity: 0, transition: 'opacity 0.15s' }}>
+                              <Tooltip title="Inicio">
+                                <IconButton size="small" onClick={() => setStartFromLine(lineSec)} sx={{ color: 'text.disabled', '&:hover': { color: 'success.main' }, p: 0.25 }}>
+                                  <FlagIcon sx={{ fontSize: 13 }} />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Fin">
+                                <IconButton size="small" onClick={() => setEndFromLine(lineSec)} sx={{ color: 'text.disabled', '&:hover': { color: 'error.main' }, p: 0.25 }}>
+                                  <CloseIcon sx={{ fontSize: 13 }} />
+                                </IconButton>
+                              </Tooltip>
+                            </Stack>
+                            {isStart && <Chip label="INICIO" size="small" color="success" sx={{ fontWeight: 700, fontSize: '0.55rem', height: 18, flexShrink: 0 }} />}
+                            {isEnd && <Chip label="FIN" size="small" color="error" sx={{ fontWeight: 700, fontSize: '0.55rem', height: 18, flexShrink: 0 }} />}
+                          </Box>
+                        );
+                      })}
+                    </Stack>
+                  </Box>
+                ))}
+              </Stack>
+            </Box>
+          </Box>
+
+          {/* RIGHT — Video + controls + range */}
+          <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 3, gap: 2, overflowY: 'auto' }}>
             <Box
               sx={{
-                width: '100%',
-                aspectRatio: '16/9',
-                bgcolor: '#0d0d1a',
-                borderRadius: 2,
-                border: '1px solid rgba(255,255,255,0.08)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                position: 'relative',
-                overflow: 'hidden',
-                mb: 2,
+                width: '100%', aspectRatio: '16/9', bgcolor: 'grey.100', borderRadius: 2,
+                border: '1px solid', borderColor: 'divider',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                position: 'relative', overflow: 'hidden',
               }}
             >
-              <MovieIcon sx={{ fontSize: 48, color: 'grey.700', mb: 1 }} />
-              <Typography variant="caption" sx={{ color: 'grey.600' }}>
-                Vista previa no disponible
-              </Typography>
-              <Box
-                sx={{
-                  position: 'absolute',
-                  bottom: 12,
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  bgcolor: 'rgba(0,0,0,0.7)',
-                  px: 2,
-                  py: 0.5,
-                  borderRadius: 1,
-                }}
-              >
-                <Typography
-                  variant="body2"
-                  sx={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: 'grey.300' }}
-                >
+              <MovieIcon sx={{ fontSize: 40, color: 'grey.400', mb: 0.5 }} />
+              <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.7rem' }}>Vista previa no disponible</Typography>
+              <Box sx={{ position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', bgcolor: 'rgba(0,0,0,0.6)', px: 1.5, py: 0.25, borderRadius: 1 }}>
+                <Typography variant="caption" sx={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: 'white' }}>
                   {formatDuration(playhead)} / {formatDuration(totalDuration)}
                 </Typography>
               </Box>
             </Box>
 
-            {/* Playback controls */}
-            <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="center" sx={{ mb: 2 }}>
-              <IconButton onClick={() => setPlayhead(Math.max(0, playhead - 5))} sx={{ color: 'grey.400' }} size="small">
-                <Replay5Icon />
+            <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
+              <IconButton onClick={() => setPlayhead(Math.max(0, playhead - 5))} size="small">
+                <Replay5Icon fontSize="small" />
               </IconButton>
               <IconButton
                 onClick={() => setPlaying(p => !p)}
-                sx={{
-                  color: 'white',
-                  bgcolor: '#7c5cbf',
-                  width: 44, height: 44,
-                  '&:hover': { bgcolor: '#6a4da8' },
-                }}
+                sx={{ color: 'white', bgcolor: 'primary.main', width: 38, height: 38, '&:hover': { bgcolor: 'primary.dark' } }}
               >
-                {playing ? <PauseIcon /> : <PlayArrowIcon />}
+                {playing ? <PauseIcon fontSize="small" /> : <PlayArrowIcon fontSize="small" />}
               </IconButton>
-              <IconButton onClick={() => setPlayhead(Math.min(totalDuration, playhead + 5))} sx={{ color: 'grey.400' }} size="small">
-                <Forward5Icon />
+              <IconButton onClick={() => setPlayhead(Math.min(totalDuration, playhead + 5))} size="small">
+                <Forward5Icon fontSize="small" />
               </IconButton>
               <Chip
                 label={isValid ? `${Math.round(clipDuration)}s` : 'Inválido'}
                 size="small"
-                sx={{
-                  ml: 2,
-                  bgcolor: isValid ? 'rgba(129,199,132,0.15)' : 'rgba(229,115,115,0.15)',
-                  color: isValid ? '#81c784' : '#e57373',
-                  fontWeight: 600,
-                }}
+                color={isValid ? 'success' : 'error'}
+                variant="outlined"
+                sx={{ ml: 1, fontWeight: 600 }}
               />
             </Stack>
 
-            {/* Range slider */}
-            <Box sx={{ px: 1, mb: 1 }}>
+            <Box sx={{ px: 0.5 }}>
               <Slider
-                value={range}
-                onChange={handleRangeChange}
-                min={0}
-                max={totalDuration}
-                step={1}
-                valueLabelDisplay="auto"
-                valueLabelFormat={formatDuration}
-                sx={{
-                  color: '#7c5cbf',
-                  '& .MuiSlider-thumb': {
-                    width: 14,
-                    height: 14,
-                    '&:hover, &.Mui-focusVisible': { boxShadow: '0 0 0 6px rgba(124,92,191,0.3)' },
-                  },
-                  '& .MuiSlider-track': { height: 4 },
-                  '& .MuiSlider-rail': { height: 4, bgcolor: 'rgba(255,255,255,0.1)' },
-                }}
+                value={range} onChange={handleRangeChange} min={0} max={totalDuration} step={1}
+                valueLabelDisplay="auto" valueLabelFormat={formatDuration}
               />
             </Box>
-            <Stack direction="row" justifyContent="space-between" sx={{ mb: 3, px: 1 }}>
-              <Typography variant="caption" sx={{ color: 'grey.500', fontVariantNumeric: 'tabular-nums' }}>
-                Inicio: <Box component="span" sx={{ color: '#b39ddb', fontWeight: 600 }}>{formatDuration(range[0])}</Box>
+            <Stack direction="row" justifyContent="space-between" sx={{ px: 0.5 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                Inicio: <Box component="span" sx={{ color: 'primary.main', fontWeight: 600 }}>{formatDuration(range[0])}</Box>
               </Typography>
-              <Typography variant="caption" sx={{ color: 'grey.500', fontVariantNumeric: 'tabular-nums' }}>
-                Fin: <Box component="span" sx={{ color: '#b39ddb', fontWeight: 600 }}>{formatDuration(range[1])}</Box>
+              <Typography variant="caption" color="text.secondary" sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                Fin: <Box component="span" sx={{ color: 'primary.main', fontWeight: 600 }}>{formatDuration(range[1])}</Box>
               </Typography>
             </Stack>
 
-            {/* Transcript section */}
-            <Box
-              sx={{
-                borderRadius: 2,
-                border: '1px solid rgba(255,255,255,0.1)',
-                overflow: 'hidden',
-              }}
-            >
-              <Box sx={{ p: 1.5, borderBottom: '1px solid rgba(255,255,255,0.08)', bgcolor: 'rgba(255,255,255,0.03)' }}>
-                <Stack direction="row" spacing={1.5} alignItems="center">
-                  <DescriptionIcon sx={{ fontSize: 16, color: 'grey.500' }} />
-                  <Typography variant="subtitle2" sx={{ color: 'grey.400', flexShrink: 0 }}>
-                    Transcripción del video
-                  </Typography>
-                  <Box sx={{ flexGrow: 1 }} />
-                  <TextField
-                    size="small"
-                    placeholder="Buscar en transcripción..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    slotProps={{
-                      input: {
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <SearchIcon sx={{ fontSize: 16, color: 'grey.600' }} />
-                          </InputAdornment>
-                        ),
-                        endAdornment: search ? (
-                          <InputAdornment position="end">
-                            <Stack direction="row" spacing={0.5} alignItems="center">
-                              {searchMatchCount > 0 && (
-                                <Chip label={searchMatchCount} size="small" sx={{ height: 18, fontSize: '0.65rem', bgcolor: 'rgba(124,92,191,0.3)', color: '#b39ddb' }} />
-                              )}
-                              <IconButton size="small" onClick={() => setSearch('')} sx={{ color: 'grey.500', p: 0.25 }}>
-                                <CloseIcon sx={{ fontSize: 14 }} />
-                              </IconButton>
-                            </Stack>
-                          </InputAdornment>
-                        ) : null,
-                      },
-                    }}
-                    sx={{
-                      maxWidth: 240,
-                      '& .MuiOutlinedInput-root': {
-                        bgcolor: 'rgba(255,255,255,0.05)',
-                        color: 'white',
-                        borderRadius: 1.5,
-                        fontSize: '0.8rem',
-                        height: 32,
-                        '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
-                        '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
-                        '&.Mui-focused fieldset': { borderColor: '#7c5cbf' },
-                      },
-                      '& .MuiInputBase-input::placeholder': { color: 'grey.600', fontSize: '0.8rem' },
-                    }}
-                  />
-                </Stack>
-              </Box>
-              <Box ref={scrollRef} sx={{ maxHeight: 400, overflowY: 'auto', p: 2 }}>
-                <Stack spacing={2.5}>
-                  {transcriptGroups.map((group, gi) => (
-                    <Box key={gi}>
-                      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1 }}>
-                        <Avatar
-                          sx={{
-                            width: 28, height: 28, fontSize: 11, fontWeight: 700,
-                            bgcolor: group.speakerColor === 'primary' ? '#7c5cbf' : '#e91e63',
-                          }}
-                        >
-                          {group.speaker.charAt(group.speaker.length - 1)}
-                        </Avatar>
-                        <Typography variant="overline" sx={{ fontSize: '0.65rem', color: 'grey.500' }}>
-                          {group.speaker}
-                        </Typography>
-                      </Stack>
-
-                      <Stack spacing={0.25} sx={{ pl: 5 }}>
-                        {group.lines.map((line, li) => {
-                          const lineSec = timeToSeconds(line.time);
-                          const status = getLineStatus(lineSec);
-                          const isInRange = status !== null;
-                          const isStart = status === 'start';
-                          const isEnd = status === 'end';
-                          const q = search.trim().toLowerCase();
-                          const hasMatch = q && line.text.toLowerCase().includes(q);
-                          const dimmed = q && !hasMatch;
-
-                          const renderText = () => {
-                            if (!q || !hasMatch) return line.text;
-                            const idx = line.text.toLowerCase().indexOf(q);
-                            const before = line.text.slice(0, idx);
-                            const match = line.text.slice(idx, idx + q.length);
-                            const after = line.text.slice(idx + q.length);
-                            return (
-                              <>
-                                {before}
-                                <Box component="span" sx={{ bgcolor: 'rgba(255,213,79,0.3)', color: '#ffd54f', borderRadius: 0.5, px: 0.25 }}>{match}</Box>
-                                {after}
-                              </>
-                            );
-                          };
-
-                          return (
-                            <Box
-                              key={li}
-                              data-time={line.time}
-                              data-in-range={isInRange ? 'true' : undefined}
-                              data-search-match={hasMatch ? 'true' : undefined}
-                              sx={{
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                gap: 1,
-                                p: 1,
-                                borderRadius: 1.5,
-                                bgcolor: isInRange ? 'rgba(76,175,80,0.1)' : 'transparent',
-                                borderLeft: '3px solid',
-                                borderColor: isStart
-                                  ? '#66bb6a'
-                                  : isEnd
-                                  ? '#ef5350'
-                                  : isInRange
-                                  ? 'rgba(76,175,80,0.3)'
-                                  : 'transparent',
-                                opacity: dimmed ? 0.35 : 1,
-                                transition: 'all 0.15s',
-                                '&:hover': {
-                                  bgcolor: isInRange ? 'rgba(76,175,80,0.15)' : 'rgba(255,255,255,0.04)',
-                                  '& .flag-buttons': { opacity: 1 },
-                                },
-                              }}
-                            >
-                              <Typography
-                                variant="caption"
-                                sx={{ fontVariantNumeric: 'tabular-nums', minWidth: 36, pt: 0.15, flexShrink: 0, color: 'grey.600' }}
-                              >
-                                {line.time}
-                              </Typography>
-                              <Typography variant="body2" sx={{ flexGrow: 1, lineHeight: 1.6, color: isInRange ? 'grey.200' : 'grey.500' }}>
-                                {renderText()}
-                              </Typography>
-                              <Stack direction="row" spacing={0.25} className="flag-buttons" sx={{ flexShrink: 0, opacity: 0, transition: 'opacity 0.15s' }}>
-                                <Tooltip title="Establecer como inicio">
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => setStartFromLine(lineSec)}
-                                    sx={{ color: 'grey.600', '&:hover': { color: '#66bb6a' } }}
-                                  >
-                                    <FlagIcon sx={{ fontSize: 14 }} />
-                                  </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Establecer como fin">
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => setEndFromLine(lineSec)}
-                                    sx={{ color: 'grey.600', '&:hover': { color: '#ef5350' } }}
-                                  >
-                                    <CloseIcon sx={{ fontSize: 14 }} />
-                                  </IconButton>
-                                </Tooltip>
-                              </Stack>
-                              {isStart && (
-                                <Chip label="INICIO" size="small" sx={{ fontWeight: 700, fontSize: '0.6rem', height: 20, flexShrink: 0, bgcolor: 'rgba(102,187,106,0.2)', color: '#66bb6a' }} />
-                              )}
-                              {isEnd && (
-                                <Chip label="FIN" size="small" sx={{ fontWeight: 700, fontSize: '0.6rem', height: 20, flexShrink: 0, bgcolor: 'rgba(239,83,80,0.2)', color: '#ef5350' }} />
-                              )}
-                            </Box>
-                          );
-                        })}
-                      </Stack>
-                    </Box>
-                  ))}
-                </Stack>
-              </Box>
-            </Box>
-
+            <Box sx={{ flexGrow: 1 }} />
+            <Stack direction="row" justifyContent="flex-end">
+              <Button
+                variant="contained" startIcon={<CheckIcon />}
+                onClick={handleSave} disabled={!isValid}
+              >
+                Guardar clip
+              </Button>
+            </Stack>
           </Box>
         </Box>
       </Box>

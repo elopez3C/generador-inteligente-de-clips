@@ -116,7 +116,7 @@ export const theme = createTheme({
       defaultProps: { elevation: 0 },
       styleOverrides: {
         root: {
-          borderRadius: 20,
+          borderRadius: '4px',
           border: '1px solid rgba(0,0,0,0.08)',
         },
       },
@@ -178,7 +178,7 @@ export const theme = createTheme({
       defaultProps: { variant: 'outlined', size: 'small' },
       styleOverrides: {
         root: {
-          '& .MuiOutlinedInput-root': { borderRadius: 12 },
+          '& .MuiOutlinedInput-root': { borderRadius: 4 },
         },
       },
     },
