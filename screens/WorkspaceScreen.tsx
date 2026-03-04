@@ -270,8 +270,8 @@ const WorkspaceScreen: React.FC<WorkspaceScreenProps> = ({
         </Box>
       )}
 
-      {/* Sticky bottom bar */}
-      <Paper
+      {/* Sticky bottom bar — hidden during analysis */}
+      {!isAnalyzing && <Paper
         elevation={4}
         sx={{
           position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1200,
@@ -298,7 +298,6 @@ const WorkspaceScreen: React.FC<WorkspaceScreenProps> = ({
           <Button
             variant="outlined" size="small" startIcon={<TuneIcon />}
             onClick={() => setParamsOpen(true)}
-            disabled={phase === 'reanalyzing'}
           >
             Re-analizar
           </Button>
@@ -311,14 +310,14 @@ const WorkspaceScreen: React.FC<WorkspaceScreenProps> = ({
           <Button
             variant="outlined" size="small"
             startIcon={<SaveIcon />}
-            disabled={selectedCount === 0 || phase === 'reanalyzing' || isSaved}
+            disabled={selectedCount === 0 || isSaved}
             onClick={onSave}
             color={isSaved ? 'success' : 'primary'}
           >
             {isSaved ? 'Guardado' : 'Guardar'}
           </Button>
         </Stack>
-      </Paper>
+      </Paper>}
 
       {/* Dialogs & Drawers */}
       <ParamsDrawer

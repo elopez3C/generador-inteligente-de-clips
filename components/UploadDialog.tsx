@@ -15,7 +15,7 @@ import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-import Slider from '@mui/material/Slider';
+import Switch from '@mui/material/Switch';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import VideoFileIcon from '@mui/icons-material/VideoFile';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -81,9 +81,9 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ open, initialParams, onClos
                   borderColor: localFile ? 'primary.light' : undefined,
                   borderRadius: '16px',
                   ...(!localFile && {
-                    backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='${dragging ? '%236750A4' : 'rgba(0%2C0%2C0%2C0.3)'}' stroke-width='1.5' stroke-dasharray='8%2c 5' stroke-linecap='round'/%3e%3c/svg%3e")`,
+                    backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='${dragging ? '%23212121' : 'rgba(0%2C0%2C0%2C0.3)'}' stroke-width='1.5' stroke-dasharray='8%2c 5' stroke-linecap='round'/%3e%3c/svg%3e")`,
                   }),
-                  bgcolor: dragging ? 'primary.light' : localFile ? 'rgba(103,80,164,0.04)' : 'background.paper',
+                  bgcolor: dragging ? 'primary.light' : localFile ? 'rgba(0,0,0,0.02)' : 'background.paper',
                   cursor: localFile ? 'default' : 'pointer',
                   transition: 'all 0.2s',
                   display: 'flex',
@@ -94,8 +94,8 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ open, initialParams, onClos
                   p: 3,
                   ...(!localFile && {
                     '&:hover': {
-                      backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%236750A4' stroke-width='1.5' stroke-dasharray='8%2c 5' stroke-linecap='round'/%3e%3c/svg%3e")`,
-                      bgcolor: 'rgba(103,80,164,0.04)',
+                      backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%23212121' stroke-width='1.5' stroke-dasharray='8%2c 5' stroke-linecap='round'/%3e%3c/svg%3e")`,
+                      bgcolor: 'rgba(0,0,0,0.02)',
                     },
                   }),
                 }}
@@ -162,9 +162,27 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ open, initialParams, onClos
                     onChange={(_, v) => {
                       if (!v) return;
                       const preset = PLATFORM_PRESETS[v as SocialFocus];
-                      setLocalParams(p => ({ ...p, socialFocus: v, durationMin: preset.durationMin, durationMax: preset.durationMax }));
+                      setLocalParams(p => ({
+                        ...p,
+                        socialFocus: v,
+                        durationMin: preset.durationMin,
+                        durationMax: preset.durationMax,
+                        avgDuration: p.avgDuration === null ? null : preset.avgDuration,
+                      }));
                     }}>
-                    {PLATFORMS.map(pl => <ToggleButton key={pl} value={pl} sx={{ fontSize: '0.7rem', px: 1.2 }}>{pl}</ToggleButton>)}
+                    {PLATFORMS.map(pl => {
+                      const preset = PLATFORM_PRESETS[pl];
+                      return (
+                        <ToggleButton key={pl} value={pl} sx={{ fontSize: '0.7rem', px: 1.2 }}>
+                          <Stack alignItems="center" spacing={0}>
+                            <span>{pl}</span>
+                            <Typography variant="caption" sx={{ fontSize: '0.55rem', color: 'text.disabled', lineHeight: 1 }}>
+                              {preset.durationMin}–{preset.durationMax}s
+                            </Typography>
+                          </Stack>
+                        </ToggleButton>
+                      );
+                    })}
                   </ToggleButtonGroup>
                 </Box>
 
@@ -211,31 +229,56 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ open, initialParams, onClos
                 </Box>
 
                 <Box>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
-                    <Typography variant="overline">Duración de Clips</Typography>
-                    {(localParams.durationMin !== PLATFORM_PRESETS[localParams.socialFocus].durationMin ||
-                      localParams.durationMax !== PLATFORM_PRESETS[localParams.socialFocus].durationMax) && (
-                      <Chip size="small" label="Personalizado" color="warning" variant="outlined" />
-                    )}
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+                    <Typography variant="overline">Duración Promedio de Clips</Typography>
+                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                      <Typography variant="caption" color="text.secondary">Automático</Typography>
+                      <Switch
+                        size="small"
+                        checked={localParams.avgDuration === null}
+                        onChange={(_, checked) =>
+                          setLocalParams(p => ({ ...p, avgDuration: checked ? null : 45 }))
+                        }
+                      />
+                    </Stack>
                   </Stack>
-                  <Slider
-                    min={5} max={180} step={5}
-                    value={[localParams.durationMin, localParams.durationMax]}
-                    valueLabelDisplay="auto"
-                    valueLabelFormat={v => `${v}s`}
-                    onChange={(_, v) => {
-                      const [min, max] = v as number[];
-                      setLocalParams(p => ({ ...p, durationMin: min, durationMax: max }));
-                    }}
-                    sx={{ mt: 1 }}
-                  />
-                  <Stack direction="row" justifyContent="space-between" alignItems="center">
-                    <Typography variant="caption" color="text.disabled">5s</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Recomendado para {localParams.socialFocus}: {PLATFORM_PRESETS[localParams.socialFocus].durationMin}–{PLATFORM_PRESETS[localParams.socialFocus].durationMax}s
-                    </Typography>
-                    <Typography variant="caption" color="text.disabled">180s</Typography>
-                  </Stack>
+                    <Stack direction="row" alignItems="center" spacing={0} sx={{ opacity: localParams.avgDuration === null ? 0.4 : 1, pointerEvents: localParams.avgDuration === null ? 'none' : 'auto' }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => setLocalParams(p => ({ ...p, avgDuration: Math.max(15, (p.avgDuration ?? 45) - 5) }))}
+                        disabled={(localParams.avgDuration ?? 45) <= 15}
+                        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '4px 0 0 4px', height: 36, width: 36 }}
+                      >
+                        <RemoveIcon fontSize="small" />
+                      </IconButton>
+                      <TextField
+                        size="small"
+                        value={`${Math.floor((localParams.avgDuration ?? 45) / 60)}:${String((localParams.avgDuration ?? 45) % 60).padStart(2, '0')}`}
+                        onChange={e => {
+                          const raw = e.target.value;
+                          let secs: number | null = null;
+                          if (raw.includes(':')) {
+                            const [m, s] = raw.split(':');
+                            const mins = parseInt(m); const sec = parseInt(s || '0');
+                            if (!isNaN(mins) && !isNaN(sec)) secs = mins * 60 + sec;
+                          } else {
+                            const v = parseInt(raw.replace('s', ''));
+                            if (!isNaN(v)) secs = v;
+                          }
+                          if (secs !== null && secs >= 15 && secs <= 600) setLocalParams(p => ({ ...p, avgDuration: secs }));
+                        }}
+                        inputProps={{ style: { textAlign: 'center', width: 48, padding: '6px 0' } }}
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0 } }}
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={() => setLocalParams(p => ({ ...p, avgDuration: Math.min(600, (p.avgDuration ?? 45) + 5) }))}
+                        disabled={(localParams.avgDuration ?? 45) >= 600}
+                        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '0 4px 4px 0', height: 36, width: 36 }}
+                      >
+                        <AddIcon fontSize="small" />
+                      </IconButton>
+                    </Stack>
                 </Box>
 
               </Stack>

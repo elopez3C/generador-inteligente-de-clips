@@ -29,6 +29,9 @@ export interface Clip {
   sourceDuration?: string;
   thumbnail?: string;
   isVertical?: boolean;
+  suggestedCaption?: string;
+  suggestedHashtags?: string[];
+  suggestedCTA?: string;
 }
 
 export type ClipStyle = 'Educativo' | 'Entretenimiento' | 'Informativo' | 'Inspiracional' | 'Ventas';
@@ -42,14 +45,15 @@ export interface AnalysisParams {
   numClips: number;
   style: ClipStyle;
   socialFocus: SocialFocus;
+  avgDuration: number | null;
   keywords: string;
 }
 
-export const PLATFORM_PRESETS: Record<SocialFocus, { durationMin: number; durationMax: number }> = {
-  'TikTok': { durationMin: 15, durationMax: 45 },
-  'YouTube Shorts': { durationMin: 30, durationMax: 55 },
-  'Instagram Reels': { durationMin: 15, durationMax: 30 },
-  'LinkedIn': { durationMin: 30, durationMax: 90 },
+export const PLATFORM_PRESETS: Record<SocialFocus, { durationMin: number; durationMax: number; avgDuration: number }> = {
+  'TikTok': { durationMin: 15, durationMax: 45, avgDuration: 30 },
+  'YouTube Shorts': { durationMin: 30, durationMax: 55, avgDuration: 45 },
+  'Instagram Reels': { durationMin: 15, durationMax: 30, avgDuration: 20 },
+  'LinkedIn': { durationMin: 30, durationMax: 90, avgDuration: 60 },
 };
 
 export interface LibraryFolder {

@@ -11,6 +11,10 @@ export const MOCK_ANALYSIS_CLIPS: Clip[] = [
     justification: 'Gancho de curiosidad muy fuerte + estadística impactante + solución práctica al final. Estructura perfecta para viralizarse en TikTok.',
     selected: false,
     thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=640&h=360&fit=crop',
+    suggestedCaption: '¿Sabías que el 90% de las startups fallan por la misma razón? No es falta de dinero, ni de tecnología. Es algo mucho más simple... y nadie te lo cuenta. 👇',
+    suggestedHashtags: ['#startups', '#emprendimiento', '#marketing', '#negociosdigitales', '#error'],
+    suggestedCTA: 'Guarda esto para no cometer el mismo error 🔖',
+
   },
   {
     id: 'c2', number: 2,
@@ -22,6 +26,10 @@ export const MOCK_ANALYSIS_CLIPS: Clip[] = [
     justification: 'Momento emocional y relatable. Las historias de origen conectan profundamente con audiencias emprendedoras y generan alto engagement.',
     selected: false,
     thumbnail: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?w=640&h=360&fit=crop',
+    suggestedCaption: 'Nuestro primer cliente nos pagó con una pizza 🍕 y un apretón de manos. Y fue el mejor pago que recibimos jamás.',
+    suggestedHashtags: ['#primercliente', '#emprendimiento', '#startup', '#historia', '#motivacion'],
+    suggestedCTA: 'Sígueme para más historias de emprendimiento 💪',
+
   },
   {
     id: 'c3', number: 3,
@@ -33,6 +41,10 @@ export const MOCK_ANALYSIS_CLIPS: Clip[] = [
     justification: 'Contenido de tipo listicle con IA como tema. Alto potencial de guardado y compartido. Muy alineado con LinkedIn.',
     selected: false,
     thumbnail: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=640&h=360&fit=crop',
+    suggestedCaption: 'Si tuviera que elegir solo 3 herramientas de IA para mi negocio, elegiría estas. La tercera te va a sorprender.',
+    suggestedHashtags: ['#IA', '#herramientas', '#productividad', '#tech', '#inteligenciaartificial'],
+    suggestedCTA: '¿Cuál usas tú? Déjalo en comentarios 👇',
+
   },
   {
     id: 'c4', number: 4,
@@ -45,6 +57,10 @@ export const MOCK_ANALYSIS_CLIPS: Clip[] = [
     selected: false,
     thumbnail: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=360&h=640&fit=crop',
     isVertical: true,
+    suggestedCaption: 'La diferencia entre los que triunfan y los que fracasan NO es el dinero ni los contactos. Es algo que nadie quiere escuchar...',
+    suggestedHashtags: ['#mentalidad', '#exito', '#fracaso', '#emprendedor', '#mindset'],
+    suggestedCTA: 'Comparte si estás de acuerdo 🔥',
+
   },
   {
     id: 'c5', number: 5,
@@ -56,6 +72,10 @@ export const MOCK_ANALYSIS_CLIPS: Clip[] = [
     justification: 'Prueba social + promesa de replicabilidad. Muy alineado con audiencias de emprendimiento.',
     selected: false,
     thumbnail: 'https://images.unsplash.com/photo-1553877522-43269d4ea984?w=640&h=360&fit=crop',
+    suggestedCaption: 'Cero presupuesto. Cero ads. Solo una estrategia que cualquiera puede copiar. Así conseguimos nuestros primeros 1000 clientes.',
+    suggestedHashtags: ['#growthhacking', '#marketing', '#sinpresupuesto', '#clientes', '#estrategia'],
+    suggestedCTA: 'Guarda este reel para probarlo tú 📌',
+
   },
 ];
 
@@ -257,6 +277,10 @@ export const MOCK_LIBRARY_CLIPS: Clip[] = [
     style: 'Informativo',
     sourceDuration: '1:12:30',
     thumbnail: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=640&h=360&fit=crop',
+    suggestedCaption: 'El error que comete el 99% de inversores novatos 💸 No hagas esto con tu primer sueldo...',
+    suggestedHashtags: ['#inversiones', '#finanzas', '#dinero', '#errores', '#ahorro'],
+    suggestedCTA: 'Sígueme para más tips financieros 💰',
+
   },
   {
     id: 'h2', number: 2,
@@ -274,6 +298,10 @@ export const MOCK_LIBRARY_CLIPS: Clip[] = [
     style: 'Informativo',
     sourceDuration: '1:12:30',
     thumbnail: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=640&h=360&fit=crop',
+    suggestedCaption: 'Pasamos de 5 a 50 personas en 6 meses. Y casi destruimos la empresa 😬 Lo que nadie te cuenta del crecimiento rápido.',
+    suggestedHashtags: ['#escalabilidad', '#equipo', '#cultura', '#startup', '#crecimiento'],
+    suggestedCTA: 'Comenta "EQUIPO" si quieres la parte 2 👇',
+
   },
   {
     id: 'h3', number: 1,
@@ -291,6 +319,10 @@ export const MOCK_LIBRARY_CLIPS: Clip[] = [
     style: 'Educativo',
     sourceDuration: '45:20',
     thumbnail: 'https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=640&h=360&fit=crop',
+    suggestedCaption: 'No necesitas millones de seguidores ✨ Solo necesitas entender este patrón para crear contenido viral. Te lo explico paso a paso.',
+    suggestedHashtags: ['#contenidoviral', '#reels', '#creadordecontenido', '#marketing', '#framework'],
+    suggestedCTA: 'Guarda este reel para cuando lo necesites 🔖',
+
   },
   {
     id: 'h4', number: 2,
@@ -308,6 +340,10 @@ export const MOCK_LIBRARY_CLIPS: Clip[] = [
     style: 'Educativo',
     sourceDuration: '45:20',
     thumbnail: 'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=640&h=360&fit=crop',
+    suggestedCaption: 'Google cambió las reglas del juego 🔍 El SEO como lo conocías está muriendo. Esto es lo que viene.',
+    suggestedHashtags: ['#SEO', '#google', '#marketingdigital', '#cambios', '#tendencias2025'],
+    suggestedCTA: 'Comparte con alguien que necesite saber esto 📩',
+
   },
   {
     id: 'h5', number: 3,
@@ -326,6 +362,10 @@ export const MOCK_LIBRARY_CLIPS: Clip[] = [
     sourceDuration: '45:20',
     thumbnail: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=360&h=640&fit=crop',
     isVertical: true,
+    suggestedCaption: 'Cambié UNA palabra en mi landing y las conversiones se duplicaron ✍️ El copywriting bien hecho es magia.',
+    suggestedHashtags: ['#copywriting', '#conversiones', '#landingpage', '#ventas', '#truco'],
+    suggestedCTA: 'Guarda para tu próxima landing 💡',
+
   },
   {
     id: 'h6', number: 1,
@@ -343,6 +383,9 @@ export const MOCK_LIBRARY_CLIPS: Clip[] = [
     style: 'Informativo',
     sourceDuration: '58:15',
     thumbnail: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=640&h=360&fit=crop',
+    suggestedCaption: 'En 5 años, las aulas universitarias serán irreconocibles.\n\nLa IA no va a reemplazar a los profesores, pero sí va a transformar radicalmente cómo aprendemos, evaluamos y certificamos conocimiento.\n\nEn esta conversación exploramos qué viene y cómo prepararse.',
+    suggestedHashtags: ['#IA', '#educacion', '#futuro', '#universidad', '#transformaciondigital'],
+    suggestedCTA: '¿Qué opinas? ¿Están las universidades preparadas? Comenta abajo.',
   },
   {
     id: 'h7', number: 2,
@@ -360,5 +403,8 @@ export const MOCK_LIBRARY_CLIPS: Clip[] = [
     style: 'Informativo',
     sourceDuration: '58:15',
     thumbnail: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=640&h=360&fit=crop',
+    suggestedCaption: 'Las universidades que no se adapten desaparecerán en una década.\n\nSuena alarmista, pero los datos lo respaldan. El modelo actual de educación superior fue diseñado para un mercado laboral que ya no existe.\n\nLa pregunta no es si va a cambiar, sino quién va a liderar ese cambio.',
+    suggestedHashtags: ['#educacion', '#innovacion', '#universidad', '#futuro', '#liderazgo'],
+    suggestedCTA: 'Comparte si crees que la educación necesita reinventarse.',
   },
 ];

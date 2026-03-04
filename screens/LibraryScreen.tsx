@@ -108,6 +108,9 @@ const downloadClipMetadata = (clip: Clip) => {
     clip.sourceVideoName ? `\nVideo fuente: ${clip.sourceVideoName}` : '',
     clip.platform ? `Plataforma: ${clip.platform}` : '',
     clip.style ? `Estilo: ${clip.style}` : '',
+    clip.suggestedCaption ? `\n--- Copy para publicar ---\nCaption:\n${clip.suggestedCaption}` : '',
+    clip.suggestedHashtags?.length ? `\nHashtags: ${clip.suggestedHashtags.join(' ')}` : '',
+    clip.suggestedCTA ? `CTA: ${clip.suggestedCTA}` : '',
   ].filter(Boolean).join('\n');
 
   const blob = new Blob([lines], { type: 'text/plain;charset=utf-8' });
@@ -404,7 +407,7 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
               onClick={() => setParamsDrawerOpen(true)}
               sx={{ display: { xs: 'none', sm: 'flex' } }}
             >
-              Regenerar clips
+              Regenerar nuevos clips
             </Button>
           )}
         </Stack>
@@ -439,7 +442,7 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
             return (
               <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={clip.id}>
                 <Card
-                  sx={{ height: '100%', display: 'flex', flexDirection: 'column', cursor: 'pointer', '&:hover': { boxShadow: '0 4px 16px rgba(103,80,164,0.15)', borderColor: 'primary.light' } }}
+                  sx={{ height: '100%', display: 'flex', flexDirection: 'column', cursor: 'pointer', '&:hover': { boxShadow: '0 4px 16px rgba(0,0,0,0.08)', borderColor: 'primary.light' } }}
                   onClick={() => onUpdateClip && setClipEditorClip(clip)}
                 >
                   {/* Mini video preview */}
@@ -504,12 +507,110 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
                       sx={{
                         display: '-webkit-box', WebkitLineClamp: 2,
                         WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                        fontStyle: 'italic', mb: 2.5,
+                        fontStyle: 'italic', mb: 1,
                       }}
                     >
                       &ldquo;{clip.hook}&rdquo;
                     </Typography>
 
+                    {/* Publishing copy section */}
+                    {(clip.suggestedCaption || clip.suggestedHashtags?.length || clip.suggestedCTA) && (
+                      <Accordion
+                        disableGutters
+                        elevation={0}
+                        sx={{
+                          mb: 1,
+                          '&:before': { display: 'none' },
+                          bgcolor: 'transparent',
+                        }}
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <AccordionSummary
+                          expandIcon={<ExpandMoreIcon sx={{ fontSize: 16 }} />}
+                          sx={{ minHeight: 28, px: 0, '& .MuiAccordionSummary-content': { my: 0.25 } }}
+                        >
+                          <Typography variant="caption" sx={{ fontWeight: 600, color: 'primary.main', fontSize: '0.7rem' }}>
+                            Copy para publicar
+                          </Typography>
+                        </AccordionSummary>
+                        <AccordionDetails sx={{ px: 0, pt: 0, pb: 1 }}>
+                          <Stack spacing={1.5}>
+                            {clip.suggestedCaption && (
+                              <Box>
+                                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.25 }}>
+                                  <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.65rem', color: 'text.secondary' }}>CAPTION</Typography>
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => { navigator.clipboard.writeText(clip.suggestedCaption!); setSnackMessage('Caption copiado'); }}
+                                    sx={{ p: 0.25 }}
+                                  >
+                                    <ContentCopyIcon sx={{ fontSize: 12 }} />
+                                  </IconButton>
+                                </Stack>
+                                <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary', whiteSpace: 'pre-line' }}>
+                                  {clip.suggestedCaption}
+                                </Typography>
+                              </Box>
+                            )}
+                            {clip.suggestedHashtags && clip.suggestedHashtags.length > 0 && (
+                              <Box>
+                                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.25 }}>
+                                  <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.65rem', color: 'text.secondary' }}>HASHTAGS</Typography>
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => { navigator.clipboard.writeText(clip.suggestedHashtags!.join(' ')); setSnackMessage('Hashtags copiados'); }}
+                                    sx={{ p: 0.25 }}
+                                  >
+                                    <ContentCopyIcon sx={{ fontSize: 12 }} />
+                                  </IconButton>
+                                </Stack>
+                                <Stack direction="row" flexWrap="wrap" gap={0.5}>
+                                  {clip.suggestedHashtags.map(tag => (
+                                    <Chip key={tag} label={tag} size="small" variant="outlined" sx={{ fontSize: '0.65rem', height: 20 }} />
+                                  ))}
+                                </Stack>
+                              </Box>
+                            )}
+                            {clip.suggestedCTA && (
+                              <Box>
+                                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.25 }}>
+                                  <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.65rem', color: 'text.secondary' }}>CTA</Typography>
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => { navigator.clipboard.writeText(clip.suggestedCTA!); setSnackMessage('CTA copiado'); }}
+                                    sx={{ p: 0.25 }}
+                                  >
+                                    <ContentCopyIcon sx={{ fontSize: 12 }} />
+                                  </IconButton>
+                                </Stack>
+                                <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary', fontWeight: 500 }}>
+                                  {clip.suggestedCTA}
+                                </Typography>
+                              </Box>
+                            )}
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              startIcon={<ContentCopyIcon sx={{ fontSize: 12 }} />}
+                              onClick={() => {
+                                const parts = [
+                                  clip.suggestedCaption,
+                                  '',
+                                  clip.suggestedHashtags?.join(' '),
+                                  '',
+                                  clip.suggestedCTA,
+                                ].filter(Boolean).join('\n');
+                                navigator.clipboard.writeText(parts);
+                                setSnackMessage('Copy completo copiado');
+                              }}
+                              sx={{ fontSize: '0.65rem', py: 0.25 }}
+                            >
+                              Copiar todo
+                            </Button>
+                          </Stack>
+                        </AccordionDetails>
+                      </Accordion>
+                    )}
 
                     {/* Actions */}
                     <Stack direction="row" spacing={0.5} sx={{ mt: 'auto' }} onClick={e => e.stopPropagation()}>
@@ -757,7 +858,7 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
         </Box>
         <Stack
           direction="row" spacing={0.5} className="project-actions"
-          sx={{ flexShrink: 0 }}
+          sx={{ flexShrink: 0, minWidth: 64, justifyContent: 'flex-end' }}
         >
           <Tooltip title="Renombrar">
             <IconButton size="small" onClick={(e) => handleStartEditProject(videoName, e)}>

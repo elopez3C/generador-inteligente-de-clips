@@ -89,7 +89,7 @@ const ClipTimeline: React.FC<ClipTimelineProps> = ({
                   borderRadius: 1,
                   border: isSelected ? '2px solid' : 'none',
                   borderColor: isSelected ? 'common.white' : undefined,
-                  boxShadow: isSelected ? '0 0 8px rgba(103,80,164,0.4)' : undefined,
+                  boxShadow: isSelected ? '0 0 8px rgba(33,33,33,0.3)' : undefined,
                   cursor: 'pointer',
                   transition: 'opacity 0.15s, box-shadow 0.15s',
                   '&:hover': { opacity: 1 },

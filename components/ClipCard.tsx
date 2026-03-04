@@ -74,7 +74,7 @@ const ClipCard: React.FC<ClipCardProps> = ({
         sx={{
           cursor: 'pointer',
           transition: 'box-shadow 0.2s',
-          '&:hover': { boxShadow: '0 4px 16px rgba(103,80,164,0.15)', borderColor: 'primary.light' },
+          '&:hover': { boxShadow: '0 4px 16px rgba(0,0,0,0.08)', borderColor: 'primary.light' },
         }}
       >
         <CardContent sx={{ pb: '12px !important' }}>

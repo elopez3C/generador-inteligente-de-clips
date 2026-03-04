@@ -428,7 +428,7 @@ const TranscriptionModePanel: React.FC<TranscriptionModePanelProps> = ({
                     <Box
                       sx={{
                         width: 36, height: 36, borderRadius: '50%',
-                        bgcolor: 'rgba(103,80,164,0.8)', display: 'flex',
+                        bgcolor: 'rgba(33,33,33,0.8)', display: 'flex',
                         alignItems: 'center', justifyContent: 'center',
                         opacity: 0,
                         transition: 'opacity 0.15s',

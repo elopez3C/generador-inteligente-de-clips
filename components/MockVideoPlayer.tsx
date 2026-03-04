@@ -173,7 +173,7 @@ const MockVideoPlayer: React.FC<MockVideoPlayerProps> = ({
           size="small"
           label={`${formatDuration(clipRange.start)} — ${formatDuration(clipRange.end)}`}
           sx={{
-            bgcolor: 'rgba(103,80,164,0.25)',
+            bgcolor: 'rgba(33,33,33,0.2)',
             color: 'primary.light',
             fontWeight: 600,
             fontSize: '0.75rem',

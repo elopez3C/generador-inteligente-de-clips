@@ -48,7 +48,7 @@ const ClipEditorDialog: React.FC<ClipEditorDialogProps> = ({
   const [playing, setPlaying] = useState(false);
   const [search, setSearch] = useState('');
   const [dragging, setDragging] = useState<'start' | 'end' | null>(null);
-  const [hoveredLineSec, setHoveredLineSec] = useState<number | null>(null);
+  const [selectionMode, setSelectionMode] = useState<'start' | 'end' | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
@@ -140,27 +140,37 @@ const ClipEditorDialog: React.FC<ClipEditorDialogProps> = ({
     onClose();
   };
 
+  // Flat array of all line timestamps for duration calculation
+  const allLineTimes = useMemo(() => {
+    const times: number[] = [];
+    transcriptGroups.forEach(g => g.lines.forEach(l => times.push(timeToSeconds(l.time))));
+    return times;
+  }, [transcriptGroups]);
+
+  const getWordTimestamp = (lineStartSec: number, wordIndex: number, totalWords: number): number => {
+    const lineIdx = allLineTimes.indexOf(lineStartSec);
+    const nextLineSec = lineIdx >= 0 && lineIdx < allLineTimes.length - 1
+      ? allLineTimes[lineIdx + 1]
+      : lineStartSec + 5;
+    const lineDuration = nextLineSec - lineStartSec;
+    return lineStartSec + (wordIndex / Math.max(totalWords, 1)) * lineDuration;
+  };
+
+  const handleWordClick = (wordTimeSec: number) => {
+    if (!selectionMode) return;
+    if (selectionMode === 'start') {
+      if (wordTimeSec < range[1]) setRange([Math.round(wordTimeSec), range[1]]);
+    } else {
+      if (wordTimeSec > range[0]) setRange([range[0], Math.round(wordTimeSec)]);
+    }
+    setSelectionMode(null);
+  };
+
   const getLineStatus = (timeSec: number): 'start' | 'end' | 'in' | null => {
     if (Math.abs(timeSec - range[0]) <= 1) return 'start';
     if (Math.abs(timeSec - range[1]) <= 1) return 'end';
     if (timeSec > range[0] && timeSec < range[1]) return 'in';
     return null;
-  };
-
-  const getHoverIntent = (lineSec: number): 'start' | 'end' => {
-    if (lineSec < range[0]) return 'start';
-    if (lineSec > range[1]) return 'end';
-    const midpoint = (range[0] + range[1]) / 2;
-    return lineSec <= midpoint ? 'start' : 'end';
-  };
-
-  const handleLineClick = (lineSec: number) => {
-    const intent = getHoverIntent(lineSec);
-    if (intent === 'start') {
-      if (lineSec < range[1]) setRange([lineSec, range[1]]);
-    } else {
-      if (lineSec > range[0]) setRange([range[0], lineSec]);
-    }
   };
 
   return (
@@ -222,6 +232,24 @@ const ClipEditorDialog: React.FC<ClipEditorDialogProps> = ({
                   Transcripción
                 </Typography>
                 <Box sx={{ flexGrow: 1 }} />
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color={selectionMode === 'start' ? 'success' : 'inherit'}
+                  onClick={() => setSelectionMode(selectionMode === 'start' ? null : 'start')}
+                  sx={{ minWidth: 56, fontSize: '0.65rem', py: 0.25, px: 1 }}
+                >
+                  Inicio
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color={selectionMode === 'end' ? 'error' : 'inherit'}
+                  onClick={() => setSelectionMode(selectionMode === 'end' ? null : 'end')}
+                  sx={{ minWidth: 56, fontSize: '0.65rem', py: 0.25, px: 1 }}
+                >
+                  Fin
+                </Button>
                 <TextField
                   size="small"
                   placeholder="Buscar..."
@@ -274,32 +302,13 @@ const ClipEditorDialog: React.FC<ClipEditorDialogProps> = ({
                         const isInRange = status !== null;
                         const isStart = status === 'start';
                         const isEnd = status === 'end';
-                        const isBoundary = isStart || isEnd;
                         const q = search.trim().toLowerCase();
                         const hasMatch = q && line.text.toLowerCase().includes(q);
                         const dimmed = q && !hasMatch;
-                        const isHovered = hoveredLineSec === lineSec && !isBoundary;
-                        const hoverIntent = isHovered ? getHoverIntent(lineSec) : null;
+                        const words = line.text.split(' ');
 
-                        const renderText = () => {
-                          if (!q || !hasMatch) return line.text;
-                          const idx = line.text.toLowerCase().indexOf(q);
-                          return (
-                            <>
-                              {line.text.slice(0, idx)}
-                              <Box component="span" sx={{ bgcolor: 'warning.light', borderRadius: 0.5, px: 0.25 }}>
-                                {line.text.slice(idx, idx + q.length)}
-                              </Box>
-                              {line.text.slice(idx + q.length)}
-                            </>
-                          );
-                        };
-
-                        // Border color: hover preview overrides default
                         const borderColor = isStart ? 'success.main'
                           : isEnd ? 'error.main'
-                          : hoverIntent === 'start' ? 'success.main'
-                          : hoverIntent === 'end' ? 'error.main'
                           : isInRange ? 'success.light'
                           : 'transparent';
 
@@ -309,43 +318,47 @@ const ClipEditorDialog: React.FC<ClipEditorDialogProps> = ({
                             data-time={line.time}
                             data-in-range={isInRange ? 'true' : undefined}
                             data-search-match={hasMatch ? 'true' : undefined}
-                            onClick={isBoundary ? undefined : () => handleLineClick(lineSec)}
-                            onMouseEnter={() => setHoveredLineSec(lineSec)}
-                            onMouseLeave={() => setHoveredLineSec(null)}
                             sx={{
                               display: 'flex', alignItems: 'flex-start', gap: 0.75, py: 0.5, px: 0.75,
                               borderRadius: 1, fontSize: '0.8rem',
-                              bgcolor: isHovered
-                                ? (hoverIntent === 'start' ? 'rgba(76,175,80,0.08)' : 'rgba(244,67,54,0.08)')
-                                : isInRange ? 'success.light' : 'transparent',
+                              bgcolor: isInRange ? 'success.light' : 'transparent',
                               borderLeft: '3px solid',
                               borderColor,
                               opacity: dimmed ? 0.35 : 1,
                               transition: 'all 0.15s',
-                              cursor: isBoundary ? 'default' : 'pointer',
-                              '&:hover': !isBoundary ? {
-                                bgcolor: hoverIntent === 'start' ? 'rgba(76,175,80,0.12)' : 'rgba(244,67,54,0.12)',
-                              } : {
-                                bgcolor: isInRange ? 'rgba(76,175,80,0.15)' : undefined,
-                              },
                             }}
                           >
                             <Typography variant="caption" sx={{ fontVariantNumeric: 'tabular-nums', minWidth: 32, pt: 0.15, flexShrink: 0, color: 'text.disabled', fontSize: '0.65rem' }}>
                               {line.time}
                             </Typography>
-                            <Typography variant="body2" sx={{ flexGrow: 1, lineHeight: 1.5, color: isInRange ? 'text.primary' : 'text.secondary', fontSize: '0.8rem' }}>
-                              {renderText()}
-                            </Typography>
-                            {isHovered && hoverIntent === 'start' && (
-                              <Typography variant="caption" sx={{ flexShrink: 0, color: 'success.main', fontWeight: 600, fontSize: '0.6rem', whiteSpace: 'nowrap' }}>
-                                ↦ Inicio
-                              </Typography>
-                            )}
-                            {isHovered && hoverIntent === 'end' && (
-                              <Typography variant="caption" sx={{ flexShrink: 0, color: 'error.main', fontWeight: 600, fontSize: '0.6rem', whiteSpace: 'nowrap' }}>
-                                Fin ↤
-                              </Typography>
-                            )}
+                            <Box sx={{ flexGrow: 1, lineHeight: 1.5, fontSize: '0.8rem', color: isInRange ? 'text.primary' : 'text.secondary', flexWrap: 'wrap' }}>
+                              {words.map((word, wi) => {
+                                const wordTime = getWordTimestamp(lineSec, wi, words.length);
+                                const wordInRange = wordTime >= range[0] && wordTime <= range[1];
+                                const isSearchMatch = q && word.toLowerCase().includes(q);
+                                return (
+                                  <Box
+                                    key={wi}
+                                    component="span"
+                                    onClick={() => handleWordClick(wordTime)}
+                                    sx={{
+                                      cursor: selectionMode ? 'pointer' : 'default',
+                                      borderRadius: 0.5,
+                                      px: 0.15,
+                                      bgcolor: isSearchMatch ? 'warning.light' : wordInRange ? 'rgba(76,175,80,0.15)' : 'transparent',
+                                      transition: 'background-color 0.1s',
+                                      ...(selectionMode && {
+                                        '&:hover': {
+                                          bgcolor: selectionMode === 'start' ? 'rgba(76,175,80,0.3)' : 'rgba(244,67,54,0.3)',
+                                        },
+                                      }),
+                                    }}
+                                  >
+                                    {word}{wi < words.length - 1 ? ' ' : ''}
+                                  </Box>
+                                );
+                              })}
+                            </Box>
                             {isStart && <Chip label="INICIO" size="small" color="success" sx={{ fontWeight: 700, fontSize: '0.55rem', height: 18, flexShrink: 0 }} />}
                             {isEnd && <Chip label="FIN" size="small" color="error" sx={{ fontWeight: 700, fontSize: '0.55rem', height: 18, flexShrink: 0 }} />}
                           </Box>

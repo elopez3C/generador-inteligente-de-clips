@@ -18,7 +18,6 @@ import Forward5Icon from '@mui/icons-material/Forward5';
 import CloseIcon from '@mui/icons-material/Close';
 import CheckIcon from '@mui/icons-material/Check';
 import MovieIcon from '@mui/icons-material/Movie';
-import FlagIcon from '@mui/icons-material/Flag';
 import EditIcon from '@mui/icons-material/Edit';
 import DescriptionIcon from '@mui/icons-material/Description';
 import SearchIcon from '@mui/icons-material/Search';
@@ -50,6 +49,7 @@ const CapCutEditor: React.FC<CapCutEditorProps> = ({
   const [playhead, setPlayhead] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [search, setSearch] = useState('');
+  const [selectionMode, setSelectionMode] = useState<'start' | 'end' | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const searchMatchCount = useMemo(() => {
@@ -110,11 +110,30 @@ const CapCutEditor: React.FC<CapCutEditorProps> = ({
     setRange([0, Math.min(60, totalDuration)]);
   };
 
-  const setStartFromLine = (timeSec: number) => {
-    if (timeSec < range[1]) setRange([timeSec, range[1]]);
+  // Flat array of all line timestamps for duration calculation
+  const allLineTimes = useMemo(() => {
+    const times: number[] = [];
+    transcriptGroups.forEach(g => g.lines.forEach(l => times.push(timeToSeconds(l.time))));
+    return times;
+  }, [transcriptGroups]);
+
+  const getWordTimestamp = (lineStartSec: number, wordIndex: number, totalWords: number): number => {
+    const lineIdx = allLineTimes.indexOf(lineStartSec);
+    const nextLineSec = lineIdx >= 0 && lineIdx < allLineTimes.length - 1
+      ? allLineTimes[lineIdx + 1]
+      : lineStartSec + 5;
+    const lineDuration = nextLineSec - lineStartSec;
+    return lineStartSec + (wordIndex / Math.max(totalWords, 1)) * lineDuration;
   };
-  const setEndFromLine = (timeSec: number) => {
-    if (timeSec > range[0]) setRange([range[0], timeSec]);
+
+  const handleWordClick = (wordTimeSec: number) => {
+    if (!selectionMode) return;
+    if (selectionMode === 'start') {
+      if (wordTimeSec < range[1]) setRange([Math.round(wordTimeSec), range[1]]);
+    } else {
+      if (wordTimeSec > range[0]) setRange([range[0], Math.round(wordTimeSec)]);
+    }
+    setSelectionMode(null);
   };
 
   const getLineStatus = (timeSec: number): 'start' | 'end' | 'in' | null => {
@@ -184,6 +203,24 @@ const CapCutEditor: React.FC<CapCutEditorProps> = ({
                   Transcripción
                 </Typography>
                 <Box sx={{ flexGrow: 1 }} />
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color={selectionMode === 'start' ? 'success' : 'inherit'}
+                  onClick={() => setSelectionMode(selectionMode === 'start' ? null : 'start')}
+                  sx={{ minWidth: 56, fontSize: '0.65rem', py: 0.25, px: 1 }}
+                >
+                  Inicio
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color={selectionMode === 'end' ? 'error' : 'inherit'}
+                  onClick={() => setSelectionMode(selectionMode === 'end' ? null : 'end')}
+                  sx={{ minWidth: 56, fontSize: '0.65rem', py: 0.25, px: 1 }}
+                >
+                  Fin
+                </Button>
                 <TextField
                   size="small"
                   placeholder="Buscar..."
@@ -239,20 +276,12 @@ const CapCutEditor: React.FC<CapCutEditorProps> = ({
                         const q = search.trim().toLowerCase();
                         const hasMatch = q && line.text.toLowerCase().includes(q);
                         const dimmed = q && !hasMatch;
+                        const words = line.text.split(' ');
 
-                        const renderText = () => {
-                          if (!q || !hasMatch) return line.text;
-                          const idx = line.text.toLowerCase().indexOf(q);
-                          return (
-                            <>
-                              {line.text.slice(0, idx)}
-                              <Box component="span" sx={{ bgcolor: 'warning.light', borderRadius: 0.5, px: 0.25 }}>
-                                {line.text.slice(idx, idx + q.length)}
-                              </Box>
-                              {line.text.slice(idx + q.length)}
-                            </>
-                          );
-                        };
+                        const borderColor = isStart ? 'success.main'
+                          : isEnd ? 'error.main'
+                          : isInRange ? 'success.light'
+                          : 'transparent';
 
                         return (
                           <Box
@@ -265,33 +294,42 @@ const CapCutEditor: React.FC<CapCutEditorProps> = ({
                               borderRadius: 1, fontSize: '0.8rem',
                               bgcolor: isInRange ? 'success.light' : 'transparent',
                               borderLeft: '3px solid',
-                              borderColor: isStart ? 'success.main' : isEnd ? 'error.main' : isInRange ? 'success.light' : 'transparent',
+                              borderColor,
                               opacity: dimmed ? 0.35 : 1,
                               transition: 'all 0.15s',
-                              '&:hover': {
-                                bgcolor: isInRange ? 'rgba(76,175,80,0.15)' : 'action.hover',
-                                '& .flag-buttons': { opacity: 1 },
-                              },
                             }}
                           >
                             <Typography variant="caption" sx={{ fontVariantNumeric: 'tabular-nums', minWidth: 32, pt: 0.15, flexShrink: 0, color: 'text.disabled', fontSize: '0.65rem' }}>
                               {line.time}
                             </Typography>
-                            <Typography variant="body2" sx={{ flexGrow: 1, lineHeight: 1.5, color: isInRange ? 'text.primary' : 'text.secondary', fontSize: '0.8rem' }}>
-                              {renderText()}
-                            </Typography>
-                            <Stack direction="row" spacing={0.25} className="flag-buttons" sx={{ flexShrink: 0, opacity: 0, transition: 'opacity 0.15s' }}>
-                              <Tooltip title="Inicio">
-                                <IconButton size="small" onClick={() => setStartFromLine(lineSec)} sx={{ color: 'text.disabled', '&:hover': { color: 'success.main' }, p: 0.25 }}>
-                                  <FlagIcon sx={{ fontSize: 13 }} />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Fin">
-                                <IconButton size="small" onClick={() => setEndFromLine(lineSec)} sx={{ color: 'text.disabled', '&:hover': { color: 'error.main' }, p: 0.25 }}>
-                                  <CloseIcon sx={{ fontSize: 13 }} />
-                                </IconButton>
-                              </Tooltip>
-                            </Stack>
+                            <Box sx={{ flexGrow: 1, lineHeight: 1.5, fontSize: '0.8rem', color: isInRange ? 'text.primary' : 'text.secondary', flexWrap: 'wrap' }}>
+                              {words.map((word, wi) => {
+                                const wordTime = getWordTimestamp(lineSec, wi, words.length);
+                                const wordInRange = wordTime >= range[0] && wordTime <= range[1];
+                                const isSearchMatch = q && word.toLowerCase().includes(q);
+                                return (
+                                  <Box
+                                    key={wi}
+                                    component="span"
+                                    onClick={() => handleWordClick(wordTime)}
+                                    sx={{
+                                      cursor: selectionMode ? 'pointer' : 'default',
+                                      borderRadius: 0.5,
+                                      px: 0.15,
+                                      bgcolor: isSearchMatch ? 'warning.light' : wordInRange ? 'rgba(76,175,80,0.15)' : 'transparent',
+                                      transition: 'background-color 0.1s',
+                                      ...(selectionMode && {
+                                        '&:hover': {
+                                          bgcolor: selectionMode === 'start' ? 'rgba(76,175,80,0.3)' : 'rgba(244,67,54,0.3)',
+                                        },
+                                      }),
+                                    }}
+                                  >
+                                    {word}{wi < words.length - 1 ? ' ' : ''}
+                                  </Box>
+                                );
+                              })}
+                            </Box>
                             {isStart && <Chip label="INICIO" size="small" color="success" sx={{ fontWeight: 700, fontSize: '0.55rem', height: 18, flexShrink: 0 }} />}
                             {isEnd && <Chip label="FIN" size="small" color="error" sx={{ fontWeight: 700, fontSize: '0.55rem', height: 18, flexShrink: 0 }} />}
                           </Box>
