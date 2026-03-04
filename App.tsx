@@ -13,7 +13,7 @@ import WorkspaceScreen from './screens/WorkspaceScreen';
 import LibraryScreen from './screens/LibraryScreen';
 import ConfirmDialog from './components/ConfirmDialog';
 import UploadDialog from './components/UploadDialog';
-import { Screen, WorkspacePhase, Clip, AnalysisParams, FileData, LibraryFolder } from './types';
+import { Screen, WorkspacePhase, Clip, AnalysisParams, FileData, LibraryFolder, PLATFORM_PRESETS, SocialFocus } from './types';
 import { MOCK_ANALYSIS_CLIPS, MOCK_LIBRARY_CLIPS } from './mockData';
 import { parseDuration } from './utils';
 
@@ -85,8 +85,8 @@ const App: React.FC = () => {
 
   // ── Flow handlers ────────────────────────────────────────────────────────────
 
-  const handleStart = (file: FileData, newParams: AnalysisParams) => {
-    setSelectedFile(file);
+  const handleStart = (files: FileData[], newParams: AnalysisParams) => {
+    setSelectedFile(files[0]);
     setParams(newParams);
     setClips([]);
     setPhase('analyzing');
@@ -95,26 +95,39 @@ const App: React.FC = () => {
     setIsSaved(false);
 
     setTimeout(() => {
-      const analysisClips = MOCK_ANALYSIS_CLIPS.map(c => ({ ...c, sourceVideoName: file.name }));
-      setClips(analysisClips);
+      // Generate clips for all files
+      const allNewClips: typeof generatedClips = [];
+      let firstFileClips: Clip[] = [];
+
+      files.forEach((file, fileIndex) => {
+        const analysisClips = MOCK_ANALYSIS_CLIPS.map(c => ({
+          ...c,
+          id: files.length > 1 ? `${c.id}-f${fileIndex}` : c.id,
+          sourceVideoName: file.name,
+        }));
+
+        if (fileIndex === 0) firstFileClips = analysisClips;
+
+        allNewClips.push(...analysisClips.map(c => ({
+          ...c,
+          isNew: true,
+          selected: false,
+          processedAt: Date.now(),
+          platform: newParams.socialFocus,
+          style: newParams.style,
+          sourceDuration: file.duration,
+        })));
+      });
+
+      setClips(firstFileClips);
       setPhase('ready');
 
-      // Auto-save all clips to library and navigate to project detail
-      const newClips = analysisClips.map(c => ({
-        ...c,
-        isNew: true,
-        selected: false,
-        processedAt: Date.now(),
-        platform: newParams.socialFocus,
-        style: newParams.style,
-        sourceDuration: file.duration,
-      }));
       setGeneratedClips(prev => [
         ...prev.map(c => ({ ...c, isNew: false })),
-        ...newClips,
+        ...allNewClips,
       ]);
       setIsSaved(true);
-      setInitialProject(file.name);
+      setInitialProject(files[0].name);
       setScreen(Screen.LIBRARY);
     }, 3200);
   };
@@ -219,6 +232,30 @@ const App: React.FC = () => {
     setGeneratedClips(prev => prev.map(c => c.id === updatedClip.id ? updatedClip : c));
   };
 
+  const handleDuplicateClip = (clip: Clip, targetPlatform: SocialFocus) => {
+    const preset = PLATFORM_PRESETS[targetPlatform];
+    const originalDuration = (clip.endMinutes * 60 + clip.endSeconds) - (clip.startMinutes * 60 + clip.startSeconds);
+    const startSec = clip.startMinutes * 60 + clip.startSeconds;
+    const newDuration = Math.min(originalDuration, preset.avgDuration);
+    const endSec = startSec + newDuration;
+    const newClip: Clip = {
+      ...clip,
+      id: `dup-${Date.now()}-${clip.id}`,
+      platform: targetPlatform,
+      isManual: true,
+      isNew: true,
+      duplicatedFrom: clip.id,
+      processedAt: Date.now(),
+      endMinutes: Math.floor(endSec / 60),
+      endSeconds: endSec % 60,
+    };
+    setGeneratedClips(prev => [
+      ...prev.map(c => ({ ...c, isNew: false })),
+      newClip,
+    ]);
+    return newClip;
+  };
+
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
       {/* AppBar */}
@@ -309,6 +346,7 @@ const App: React.FC = () => {
             onReAnalyze={handleReAnalyzeProject}
             onAddManualClip={handleAddManualClip}
             onUpdateClip={handleUpdateClip}
+            onDuplicateClip={handleDuplicateClip}
           />
         )}
       </Box>

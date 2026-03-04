@@ -45,13 +45,17 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 import ConfirmDialog from '../components/ConfirmDialog';
 import MockVideoPlayer from '../components/MockVideoPlayer';
 import ParamsDrawer from '../components/ParamsDrawer';
 import CapCutEditor from '../components/CapCutEditor';
 import ClipEditorDialog from '../components/ClipEditorDialog';
-import { Clip, AnalysisParams, LibraryFolder } from '../types';
-import { parseDuration } from '../utils';
+import ErrorBoundary from '../components/ErrorBoundary';
+import ProjectTimeline from '../components/ProjectTimeline';
+import { Clip, AnalysisParams, LibraryFolder, SocialFocus } from '../types';
+import { parseDuration, generateEDL } from '../utils';
 import { MOCK_TRANSCRIPT } from '../mockData';
 
 interface LibraryScreenProps {
@@ -72,6 +76,7 @@ interface LibraryScreenProps {
   params?: AnalysisParams;
   onAddManualClip?: (projectName: string, clip: Clip) => void;
   onUpdateClip?: (clip: Clip) => void;
+  onDuplicateClip?: (clip: Clip, targetPlatform: SocialFocus) => Clip;
 }
 
 type DateFilter = 'all' | 'week' | 'month';
@@ -127,7 +132,7 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
   onResumeActiveSession, onNewAnalysis, onDeleteClip, onOpenInWorkspace,
   folders, onFoldersChange, onRenameClip, onRenameProject,
   initialSelectedProject, onProjectViewed,
-  onReAnalyze, params: externalParams, onAddManualClip, onUpdateClip,
+  onReAnalyze, params: externalParams, onAddManualClip, onUpdateClip, onDuplicateClip,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
@@ -135,8 +140,6 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ clipId: string; title: string } | null>(null);
   const [snackMessage, setSnackMessage] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
-
   // Folder management
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
@@ -149,6 +152,11 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
   const [editClipValue, setEditClipValue] = useState('');
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editFolderValue, setEditFolderValue] = useState('');
+
+
+  // Duplicate menu
+  const [dupMenuAnchor, setDupMenuAnchor] = useState<HTMLElement | null>(null);
+  const [dupMenuClip, setDupMenuClip] = useState<Clip | null>(null);
 
   // Per-clip editing / regeneration / manual clip
   const [paramsDrawerOpen, setParamsDrawerOpen] = useState(false);
@@ -283,22 +291,37 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
 
   const projectClips = selectedProject ? (projects[selectedProject] ?? []) : [];
 
-  // Category filter for detail view
-  const projectCategories = useMemo(() => {
-    const cats = new Set(projectClips.map(c => c.category));
-    return Array.from(cats).sort();
-  }, [projectClips]);
-
-  const visibleClips = useMemo(() => {
-    if (!categoryFilter) return projectClips;
-    return projectClips.filter(c => c.category === categoryFilter);
-  }, [projectClips, categoryFilter]);
+  const visibleClips = projectClips;
 
   // Project context (from first clip that has the fields)
   const projectContext = useMemo(() => {
     const ref = projectClips.find(c => c.platform || c.style || c.sourceDuration);
     return ref ? { platform: ref.platform, style: ref.style, sourceDuration: ref.sourceDuration } : null;
   }, [projectClips]);
+
+  // EDL export
+  const handleExportEDL = () => {
+    if (!selectedProject) return;
+    const edlContent = generateEDL(projectClips, selectedProject);
+    const blob = new Blob([edlContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${selectedProject.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_ ]/g, '_')}.edl`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setSnackMessage('EDL exportado correctamente');
+  };
+
+  // Duplicate clip handler
+  const handleDuplicate = (platform: SocialFocus) => {
+    if (!dupMenuClip || !onDuplicateClip) return;
+    const newClip = onDuplicateClip(dupMenuClip, platform);
+    setDupMenuAnchor(null);
+    setDupMenuClip(null);
+    setClipEditorClip(newClip);
+    setSnackMessage(`Clip duplicado para ${platform}`);
+  };
 
   // Copy hook
   const handleCopyHook = (hook: string) => {
@@ -344,7 +367,7 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
         {/* Back button */}
         <Button
           startIcon={<ArrowBackIcon />}
-          onClick={() => { setSelectedProject(null); setCategoryFilter(null); }}
+          onClick={() => { setSelectedProject(null); }}
           sx={{ mb: 1, color: 'text.primary', fontWeight: 500 }}
         >
           Volver
@@ -377,11 +400,6 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
               <Typography variant="body2" color="text.secondary">
                 {projectClips.length} clip{projectClips.length !== 1 ? 's' : ''}
               </Typography>
-              {projectContext?.sourceDuration && (
-                <Typography variant="body2" color="text.secondary">
-                  · Duración: {projectContext.sourceDuration}
-                </Typography>
-              )}
               {projectContext?.platform && (
                 <Chip label={projectContext.platform} size="small" variant="outlined" />
               )}
@@ -390,6 +408,14 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
               )}
             </Stack>
           </Box>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={handleExportEDL}
+            sx={{ display: { xs: 'none', sm: 'flex' } }}
+          >
+            Exportar EDL
+          </Button>
           {onAddManualClip && (
             <Button
               variant="outlined"
@@ -412,27 +438,13 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
           )}
         </Stack>
 
-        {/* Category filter chips */}
-        {projectCategories.length > 1 && (
-          <Stack direction="row" spacing={1} sx={{ mb: 3 }} flexWrap="wrap" useFlexGap>
-            <Chip
-              label="Todos"
-              size="small"
-              variant={categoryFilter === null ? 'filled' : 'outlined'}
-              color={categoryFilter === null ? 'primary' : 'default'}
-              onClick={() => setCategoryFilter(null)}
-            />
-            {projectCategories.map(cat => (
-              <Chip
-                key={cat}
-                label={cat}
-                size="small"
-                variant={categoryFilter === cat ? 'filled' : 'outlined'}
-                color={categoryFilter === cat ? 'primary' : 'default'}
-                onClick={() => setCategoryFilter(categoryFilter === cat ? null : cat)}
-              />
-            ))}
-          </Stack>
+        {/* Project timeline */}
+        {projectContext?.sourceDuration && (
+          <ProjectTimeline
+            clips={projectClips}
+            totalDuration={parseDuration(projectContext.sourceDuration)}
+            onClipClick={(clip) => onUpdateClip && setClipEditorClip(clip)}
+          />
         )}
 
         {/* Clip cards grid */}
@@ -499,6 +511,22 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
                       >
                         {clip.title}
                       </Typography>
+                    )}
+
+                    {/* Tags */}
+                    {clip.tags && clip.tags.length > 0 && (
+                      <Stack direction="row" spacing={0.5} sx={{ mb: 0.5 }} flexWrap="wrap" useFlexGap>
+                        {clip.tags.map(tag => (
+                          <Chip
+                            key={tag} label={tag} size="small" variant="outlined"
+                            sx={{ fontSize: '0.6rem', height: 18 }}
+                            onClick={(e) => { e.stopPropagation(); }}
+                          />
+                        ))}
+                        {clip.duplicatedFrom && (
+                          <Chip label="Duplicado" size="small" color="info" variant="outlined" sx={{ fontSize: '0.6rem', height: 18 }} />
+                        )}
+                      </Stack>
                     )}
 
                     {/* Hook */}
@@ -622,6 +650,16 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
                         Eliminar
                       </Button>
                       <Box sx={{ flexGrow: 1 }} />
+                      {onDuplicateClip && (
+                        <Tooltip title="Duplicar para otra plataforma">
+                          <IconButton
+                            size="small"
+                            onClick={(e) => { setDupMenuAnchor(e.currentTarget); setDupMenuClip(clip); }}
+                          >
+                            <ContentCopyIcon sx={{ fontSize: 16 }} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
                       <Button
                         size="small"
                         startIcon={<DownloadIcon />}
@@ -647,6 +685,21 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
             );
           })}
         </Grid>
+
+        {/* Duplicate platform menu */}
+        <Menu
+          anchorEl={dupMenuAnchor}
+          open={Boolean(dupMenuAnchor)}
+          onClose={() => { setDupMenuAnchor(null); setDupMenuClip(null); }}
+        >
+          {(['TikTok', 'YouTube Shorts', 'Instagram Reels', 'LinkedIn'] as SocialFocus[])
+            .filter(p => p !== dupMenuClip?.platform)
+            .map(platform => (
+              <MenuItem key={platform} onClick={() => handleDuplicate(platform)}>
+                {platform}
+              </MenuItem>
+            ))}
+        </Menu>
 
         {/* Delete confirmation dialog */}
         <ConfirmDialog
@@ -698,17 +751,19 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({
 
         {/* ClipEditorDialog for per-clip editing */}
         {onUpdateClip && (
-          <ClipEditorDialog
-            open={clipEditorClip !== null}
-            clip={clipEditorClip}
-            totalDuration={projectContext?.sourceDuration ? parseDuration(projectContext.sourceDuration) : 600}
-            transcriptGroups={MOCK_TRANSCRIPT}
-            onClose={() => setClipEditorClip(null)}
-            onSave={(updatedClip) => {
-              onUpdateClip(updatedClip);
-              setClipEditorClip(null);
-            }}
-          />
+          <ErrorBoundary>
+            <ClipEditorDialog
+              open={clipEditorClip !== null}
+              clip={clipEditorClip}
+              totalDuration={projectContext?.sourceDuration ? parseDuration(projectContext.sourceDuration) : 600}
+              transcriptGroups={MOCK_TRANSCRIPT}
+              onClose={() => setClipEditorClip(null)}
+              onSave={(updatedClip) => {
+                onUpdateClip(updatedClip);
+                setClipEditorClip(null);
+              }}
+            />
+          </ErrorBoundary>
         )}
       </Box>
     );

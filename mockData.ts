@@ -14,7 +14,7 @@ export const MOCK_ANALYSIS_CLIPS: Clip[] = [
     suggestedCaption: '¿Sabías que el 90% de las startups fallan por la misma razón? No es falta de dinero, ni de tecnología. Es algo mucho más simple... y nadie te lo cuenta. 👇',
     suggestedHashtags: ['#startups', '#emprendimiento', '#marketing', '#negociosdigitales', '#error'],
     suggestedCTA: 'Guarda esto para no cometer el mismo error 🔖',
-
+    tags: ['Marketing', 'Startups'],
   },
   {
     id: 'c2', number: 2,
@@ -29,7 +29,7 @@ export const MOCK_ANALYSIS_CLIPS: Clip[] = [
     suggestedCaption: 'Nuestro primer cliente nos pagó con una pizza 🍕 y un apretón de manos. Y fue el mejor pago que recibimos jamás.',
     suggestedHashtags: ['#primercliente', '#emprendimiento', '#startup', '#historia', '#motivacion'],
     suggestedCTA: 'Sígueme para más historias de emprendimiento 💪',
-
+    tags: ['Emprendimiento', 'Storytelling'],
   },
   {
     id: 'c3', number: 3,
@@ -44,7 +44,7 @@ export const MOCK_ANALYSIS_CLIPS: Clip[] = [
     suggestedCaption: 'Si tuviera que elegir solo 3 herramientas de IA para mi negocio, elegiría estas. La tercera te va a sorprender.',
     suggestedHashtags: ['#IA', '#herramientas', '#productividad', '#tech', '#inteligenciaartificial'],
     suggestedCTA: '¿Cuál usas tú? Déjalo en comentarios 👇',
-
+    tags: ['Inteligencia Artificial', 'Productividad', 'Tech'],
   },
   {
     id: 'c4', number: 4,
@@ -60,7 +60,7 @@ export const MOCK_ANALYSIS_CLIPS: Clip[] = [
     suggestedCaption: 'La diferencia entre los que triunfan y los que fracasan NO es el dinero ni los contactos. Es algo que nadie quiere escuchar...',
     suggestedHashtags: ['#mentalidad', '#exito', '#fracaso', '#emprendedor', '#mindset'],
     suggestedCTA: 'Comparte si estás de acuerdo 🔥',
-
+    tags: ['Mentalidad', 'Emprendimiento'],
   },
   {
     id: 'c5', number: 5,
@@ -75,7 +75,7 @@ export const MOCK_ANALYSIS_CLIPS: Clip[] = [
     suggestedCaption: 'Cero presupuesto. Cero ads. Solo una estrategia que cualquiera puede copiar. Así conseguimos nuestros primeros 1000 clientes.',
     suggestedHashtags: ['#growthhacking', '#marketing', '#sinpresupuesto', '#clientes', '#estrategia'],
     suggestedCTA: 'Guarda este reel para probarlo tú 📌',
-
+    tags: ['Marketing', 'Growth'],
   },
 ];
 
@@ -280,7 +280,7 @@ export const MOCK_LIBRARY_CLIPS: Clip[] = [
     suggestedCaption: 'El error que comete el 99% de inversores novatos 💸 No hagas esto con tu primer sueldo...',
     suggestedHashtags: ['#inversiones', '#finanzas', '#dinero', '#errores', '#ahorro'],
     suggestedCTA: 'Sígueme para más tips financieros 💰',
-
+    tags: ['Finanzas', 'Inversión'],
   },
   {
     id: 'h2', number: 2,
@@ -301,7 +301,7 @@ export const MOCK_LIBRARY_CLIPS: Clip[] = [
     suggestedCaption: 'Pasamos de 5 a 50 personas en 6 meses. Y casi destruimos la empresa 😬 Lo que nadie te cuenta del crecimiento rápido.',
     suggestedHashtags: ['#escalabilidad', '#equipo', '#cultura', '#startup', '#crecimiento'],
     suggestedCTA: 'Comenta "EQUIPO" si quieres la parte 2 👇',
-
+    tags: ['Cultura', 'Escalabilidad'],
   },
   {
     id: 'h3', number: 1,
@@ -322,7 +322,7 @@ export const MOCK_LIBRARY_CLIPS: Clip[] = [
     suggestedCaption: 'No necesitas millones de seguidores ✨ Solo necesitas entender este patrón para crear contenido viral. Te lo explico paso a paso.',
     suggestedHashtags: ['#contenidoviral', '#reels', '#creadordecontenido', '#marketing', '#framework'],
     suggestedCTA: 'Guarda este reel para cuando lo necesites 🔖',
-
+    tags: ['Marketing', 'Contenido'],
   },
   {
     id: 'h4', number: 2,
@@ -343,7 +343,7 @@ export const MOCK_LIBRARY_CLIPS: Clip[] = [
     suggestedCaption: 'Google cambió las reglas del juego 🔍 El SEO como lo conocías está muriendo. Esto es lo que viene.',
     suggestedHashtags: ['#SEO', '#google', '#marketingdigital', '#cambios', '#tendencias2025'],
     suggestedCTA: 'Comparte con alguien que necesite saber esto 📩',
-
+    tags: ['SEO', 'Tech', 'Marketing'],
   },
   {
     id: 'h5', number: 3,
@@ -365,7 +365,7 @@ export const MOCK_LIBRARY_CLIPS: Clip[] = [
     suggestedCaption: 'Cambié UNA palabra en mi landing y las conversiones se duplicaron ✍️ El copywriting bien hecho es magia.',
     suggestedHashtags: ['#copywriting', '#conversiones', '#landingpage', '#ventas', '#truco'],
     suggestedCTA: 'Guarda para tu próxima landing 💡',
-
+    tags: ['Copywriting', 'Ventas'],
   },
   {
     id: 'h6', number: 1,
@@ -386,6 +386,7 @@ export const MOCK_LIBRARY_CLIPS: Clip[] = [
     suggestedCaption: 'En 5 años, las aulas universitarias serán irreconocibles.\n\nLa IA no va a reemplazar a los profesores, pero sí va a transformar radicalmente cómo aprendemos, evaluamos y certificamos conocimiento.\n\nEn esta conversación exploramos qué viene y cómo prepararse.',
     suggestedHashtags: ['#IA', '#educacion', '#futuro', '#universidad', '#transformaciondigital'],
     suggestedCTA: '¿Qué opinas? ¿Están las universidades preparadas? Comenta abajo.',
+    tags: ['Inteligencia Artificial', 'Educación', 'Futuro'],
   },
   {
     id: 'h7', number: 2,
@@ -406,5 +407,6 @@ export const MOCK_LIBRARY_CLIPS: Clip[] = [
     suggestedCaption: 'Las universidades que no se adapten desaparecerán en una década.\n\nSuena alarmista, pero los datos lo respaldan. El modelo actual de educación superior fue diseñado para un mercado laboral que ya no existe.\n\nLa pregunta no es si va a cambiar, sino quién va a liderar ese cambio.',
     suggestedHashtags: ['#educacion', '#innovacion', '#universidad', '#futuro', '#liderazgo'],
     suggestedCTA: 'Comparte si crees que la educación necesita reinventarse.',
+    tags: ['Educación', 'Innovación'],
   },
 ];

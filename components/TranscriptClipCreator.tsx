@@ -150,7 +150,7 @@ const TranscriptClipCreator: React.FC<TranscriptClipCreatorProps> = ({
       open={open}
       onClose={onClose}
       fullScreen
-      PaperProps={{ sx: { bgcolor: 'background.default' } }}
+      slotProps={{ paper: { sx: { bgcolor: 'background.default' } } }}
     >
       <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
 

@@ -121,6 +121,14 @@ const ClipEditorDialog: React.FC<ClipEditorDialogProps> = ({
     }
   }, [dragging, handleTimelineDrag, handleTimelineDragEnd]);
 
+  // Flat array of all line timestamps for duration calculation
+  // Must be before the early return to satisfy React's rules of hooks
+  const allLineTimes = useMemo(() => {
+    const times: number[] = [];
+    transcriptGroups.forEach(g => g.lines.forEach(l => times.push(timeToSeconds(l.time))));
+    return times;
+  }, [transcriptGroups]);
+
   if (!clip) return null;
 
   const clipDuration = range[1] - range[0];
@@ -139,13 +147,6 @@ const ClipEditorDialog: React.FC<ClipEditorDialogProps> = ({
     });
     onClose();
   };
-
-  // Flat array of all line timestamps for duration calculation
-  const allLineTimes = useMemo(() => {
-    const times: number[] = [];
-    transcriptGroups.forEach(g => g.lines.forEach(l => times.push(timeToSeconds(l.time))));
-    return times;
-  }, [transcriptGroups]);
 
   const getWordTimestamp = (lineStartSec: number, wordIndex: number, totalWords: number): number => {
     const lineIdx = allLineTimes.indexOf(lineStartSec);
@@ -178,13 +179,15 @@ const ClipEditorDialog: React.FC<ClipEditorDialogProps> = ({
       open={open}
       onClose={onClose}
       maxWidth={false}
-      PaperProps={{
-        sx: {
-          width: 'calc(100vw - 80px)',
-          maxWidth: 'calc(100vw - 80px)',
-          height: 'calc(100vh - 80px)',
-          borderRadius: 3,
-          m: '40px',
+      slotProps={{
+        paper: {
+          sx: {
+            width: 'calc(100vw - 80px)',
+            maxWidth: 'calc(100vw - 80px)',
+            height: 'calc(100vh - 80px)',
+            borderRadius: 3,
+            m: '40px',
+          },
         },
       }}
     >

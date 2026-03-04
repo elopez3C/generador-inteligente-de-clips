@@ -32,6 +32,8 @@ export interface Clip {
   suggestedCaption?: string;
   suggestedHashtags?: string[];
   suggestedCTA?: string;
+  tags?: string[];
+  duplicatedFrom?: string;
 }
 
 export type ClipStyle = 'Educativo' | 'Entretenimiento' | 'Informativo' | 'Inspiracional' | 'Ventas';

@@ -33,20 +33,42 @@ interface UploadDialogProps {
   open: boolean;
   initialParams: AnalysisParams;
   onClose: () => void;
-  onStart: (file: FileData, params: AnalysisParams) => void;
+  onStart: (files: FileData[], params: AnalysisParams) => void;
 }
 
+const MOCK_FILE_NAMES = [
+  'podcast_episodio_42_final.mp4',
+  'entrevista_CEO_2024.mov',
+  'webinar_producto_launch.mp4',
+  'conferencia_IA_keynote.mkv',
+  'tutorial_react_avanzado.mp4',
+  'mesa_redonda_fintech.webm',
+];
+
 const UploadDialog: React.FC<UploadDialogProps> = ({ open, initialParams, onClose, onStart }) => {
-  const [localFile, setLocalFile] = useState<FileData | null>(null);
+  const [localFiles, setLocalFiles] = useState<FileData[]>([]);
   const [localParams, setLocalParams] = useState<AnalysisParams>(initialParams);
   const [dragging, setDragging] = useState(false);
 
   const handleSimulate = () => {
-    setLocalFile({ name: 'podcast_episodio_42_final.mp4', size: 450.5, duration: '45:12' });
+    const usedNames = new Set(localFiles.map(f => f.name));
+    const available = MOCK_FILE_NAMES.filter(n => !usedNames.has(n));
+    const name = available.length > 0
+      ? available[Math.floor(Math.random() * available.length)]
+      : `video_${Date.now()}.mp4`;
+    const size = Math.round((200 + Math.random() * 600) * 10) / 10;
+    const mins = Math.floor(Math.random() * 60) + 10;
+    const secs = Math.floor(Math.random() * 60);
+    const duration = `${mins}:${String(secs).padStart(2, '0')}`;
+    setLocalFiles(prev => [...prev, { name, size, duration }]);
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setLocalFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleExited = () => {
-    setLocalFile(null);
+    setLocalFiles([]);
   };
 
   return (
@@ -66,44 +88,73 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ open, initialParams, onClos
 
       <DialogContent sx={{ px: 4, py: 0 }}>
         <Grid container sx={{ minHeight: 420 }}>
-          {/* Left column: drop zone */}
+          {/* Left column: file list + drop zone */}
           <Grid size={{ xs: 12, md: 5 }}>
-            <Box sx={{ pr: 2, height: '100%', display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box sx={{ pr: 2, height: '100%', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              {/* Stacked file list */}
+              {localFiles.map((file, index) => (
+                <Paper
+                  key={`${file.name}-${index}`}
+                  variant="outlined"
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'primary.light',
+                    borderRadius: '12px',
+                    bgcolor: 'rgba(0,0,0,0.02)',
+                    p: 1.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                  }}
+                >
+                  <Avatar sx={{ bgcolor: 'primary.main', width: 36, height: 36 }}>
+                    <VideoFileIcon sx={{ fontSize: 20 }} />
+                  </Avatar>
+                  <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                    <Typography variant="subtitle2" noWrap>{file.name}</Typography>
+                    <Stack direction="row" spacing={0.5}>
+                      <Chip size="small" label={`${file.size} MB`} sx={{ height: 20, '& .MuiChip-label': { fontSize: '0.65rem', px: 0.8 } }} />
+                      <Chip size="small" label={`⏱ ${file.duration}`} sx={{ height: 20, '& .MuiChip-label': { fontSize: '0.65rem', px: 0.8 } }} />
+                    </Stack>
+                  </Box>
+                  <IconButton size="small" color="error" onClick={() => handleRemoveFile(index)}>
+                    <DeleteOutlineIcon fontSize="small" />
+                  </IconButton>
+                </Paper>
+              ))}
+
+              {/* Dropzone — always visible */}
               <Paper
                 variant="outlined"
-                onClick={!localFile ? handleSimulate : undefined}
+                onClick={handleSimulate}
                 onDragOver={e => { e.preventDefault(); setDragging(true); }}
                 onDragLeave={() => setDragging(false)}
                 onDrop={e => { e.preventDefault(); setDragging(false); handleSimulate(); }}
                 sx={{
-                  flexGrow: 1,
-                  border: localFile ? '1px solid' : 'none',
-                  borderColor: localFile ? 'primary.light' : undefined,
+                  flexGrow: localFiles.length === 0 ? 1 : 0,
+                  minHeight: localFiles.length === 0 ? undefined : 80,
+                  border: 'none',
                   borderRadius: '16px',
-                  ...(!localFile && {
-                    backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='${dragging ? '%23212121' : 'rgba(0%2C0%2C0%2C0.3)'}' stroke-width='1.5' stroke-dasharray='8%2c 5' stroke-linecap='round'/%3e%3c/svg%3e")`,
-                  }),
-                  bgcolor: dragging ? 'primary.light' : localFile ? 'rgba(0,0,0,0.02)' : 'background.paper',
-                  cursor: localFile ? 'default' : 'pointer',
+                  backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='${dragging ? '%23212121' : 'rgba(0%2C0%2C0%2C0.3)'}' stroke-width='1.5' stroke-dasharray='8%2c 5' stroke-linecap='round'/%3e%3c/svg%3e")`,
+                  bgcolor: dragging ? 'primary.light' : 'background.paper',
+                  cursor: 'pointer',
                   transition: 'all 0.2s',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
                   textAlign: 'center',
-                  p: 3,
-                  ...(!localFile && {
-                    '&:hover': {
-                      backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%23212121' stroke-width='1.5' stroke-dasharray='8%2c 5' stroke-linecap='round'/%3e%3c/svg%3e")`,
-                      bgcolor: 'rgba(0,0,0,0.02)',
-                    },
-                  }),
+                  p: localFiles.length === 0 ? 3 : 1.5,
+                  '&:hover': {
+                    backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%23212121' stroke-width='1.5' stroke-dasharray='8%2c 5' stroke-linecap='round'/%3e%3c/svg%3e")`,
+                    bgcolor: 'rgba(0,0,0,0.02)',
+                  },
                 }}
               >
-                {!localFile ? (
+                {localFiles.length === 0 ? (
                   <>
                     <CloudUploadIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1.5 }} />
-                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>Sube tu archivo</Typography>
+                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>Sube tus archivos</Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5 }}>
                       Arrastra aquí o haz clic para seleccionar
                     </Typography>
@@ -114,23 +165,10 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ open, initialParams, onClos
                   </>
                 ) : (
                   <>
-                    <Avatar sx={{ bgcolor: 'primary.main', width: 56, height: 56, mb: 2 }}>
-                      <VideoFileIcon />
-                    </Avatar>
-                    <Typography variant="subtitle2" noWrap sx={{ maxWidth: '100%', mb: 0.5 }}>{localFile.name}</Typography>
-                    <Stack direction="row" spacing={0.5} sx={{ mb: 2 }}>
-                      <Chip size="small" label={`${localFile.size} MB`} />
-                      <Chip size="small" label={`⏱ ${localFile.duration}`} />
-                    </Stack>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      color="error"
-                      startIcon={<DeleteOutlineIcon />}
-                      onClick={e => { e.stopPropagation(); setLocalFile(null); }}
-                    >
-                      Eliminar
-                    </Button>
+                    <AddIcon sx={{ fontSize: 24, color: 'primary.main', mb: 0.5 }} />
+                    <Typography variant="caption" color="text.secondary">
+                      Añadir otro archivo
+                    </Typography>
                   </>
                 )}
               </Paper>
@@ -291,10 +329,10 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ open, initialParams, onClos
         <Button variant="outlined" onClick={onClose}>Cancelar</Button>
         <Button
           variant="contained"
-          disabled={!localFile}
-          onClick={() => localFile && onStart(localFile, localParams)}
+          disabled={localFiles.length === 0}
+          onClick={() => localFiles.length > 0 && onStart(localFiles, localParams)}
         >
-          Empezar Análisis
+          Empezar Análisis {localFiles.length > 1 ? `(${localFiles.length} archivos)` : ''}
         </Button>
       </DialogActions>
     </Dialog>

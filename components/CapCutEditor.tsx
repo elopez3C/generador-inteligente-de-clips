@@ -148,13 +148,15 @@ const CapCutEditor: React.FC<CapCutEditorProps> = ({
       open={open}
       onClose={onClose}
       maxWidth={false}
-      PaperProps={{
-        sx: {
-          width: 'calc(100vw - 80px)',
-          maxWidth: 'calc(100vw - 80px)',
-          height: 'calc(100vh - 80px)',
-          borderRadius: 3,
-          m: '40px',
+      slotProps={{
+        paper: {
+          sx: {
+            width: 'calc(100vw - 80px)',
+            maxWidth: 'calc(100vw - 80px)',
+            height: 'calc(100vh - 80px)',
+            borderRadius: 3,
+            m: '40px',
+          },
         },
       }}
     >
